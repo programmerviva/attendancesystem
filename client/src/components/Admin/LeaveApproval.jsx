@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext'; // यदि आप AuthContext का उपयोग कर रहे हैं
+import { useAuth } from "../../context/AuthContext"; // यदि आप AuthContext का उपयोग कर रहे हैं
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 
@@ -17,20 +17,20 @@ function LeaveApproval() {
     }
   }, [user, navigate]);
 
-  useEffect(() => {
-    const fetchLeaveRequests = async () => {
-      try {
-        const response = await axios.get('/api/v1/leaves/pending', { // Backend API एंडपॉइंट (आपको इसे परिभाषित करना होगा)
-          headers: {
-            Authorization: `Bearer ${token}`, // यदि आप AuthContext का उपयोग कर रहे हैं
-          },
-        });
-        setLeaveRequests(response.data.data.leaves); // Adjust based on your API response structure
-      } catch (err) {
-        setError(err.response?.data?.message || 'Could not fetch leave requests.');
-      }
-    };
+  const fetchLeaveRequests = async () => {
+    try {
+      const response = await axios.get('/api/v1/leaves/pending', { // Backend API एंडपॉइंट (आपको इसे परिभाषित करना होगा)
+        headers: {
+          Authorization: `Bearer ${token}`, // यदि आप AuthContext का उपयोग कर रहे हैं
+        },
+      });
+      setLeaveRequests(response.data.data.leaves); // Adjust based on your API response structure
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not fetch leave requests.');
+    }
+  };
 
+  useEffect(() => {
     fetchLeaveRequests();
   }, [token]);
 

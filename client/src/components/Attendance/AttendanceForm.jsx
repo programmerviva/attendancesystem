@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useLocation } from '../hooks/useLocation'; // कस्टम हुक (नीचे देखें)
-import { useAuth } from '../context/AuthContext'; // यदि आप AuthContext का उपयोग कर रहे हैं
+import { useLocation } from '../../hooks/useLocation'; // कस्टम हुक (नीचे देखें)
+import { useAuth } from '../../context/AuthContext'; // यदि आप AuthContext का उपयोग कर रहे हैं
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs'; // तारीख और समय के साथ काम करने के लिए
 

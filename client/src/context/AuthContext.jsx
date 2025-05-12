@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         setToken(null);
         setUser(null);
-        localStorage.removeItem('authToken'); // Clear the token from localStorage
+        localStorage.removeItem('authToken');
         navigate('/login');
     };
 
@@ -63,6 +63,11 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
+// Define useAuth hook separately
 export const useAuth = () => {
-    return useContext(AuthContext);
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
 };

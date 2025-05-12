@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -11,22 +11,20 @@ import ProtectedRoute from './components/auth/ProtectedRoute'; // Import Protect
 
 function App() {
     return (
-        <Router>
-            <div className="app">
-                <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/signup" element={<SignupPage />} />
+        <div className="app">
+            <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
 
-                    {/* Protected Routes */}
-                    <Route element={<ProtectedRoute />}>
-                        <Route path="/attendance" element={<AttendancePage />} />
-                        <Route path="/leave" element={<LeavePage />} />
-                        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-                    </Route>
-                </Routes>
-            </div>
-        </Router>
+                {/* Protected Routes */}
+                <Route element={<ProtectedRoute />}>
+                    <Route path="/attendance" element={<AttendancePage />} />
+                    <Route path="/leave" element={<LeavePage />} />
+                    <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+                </Route>
+            </Routes>
+        </div>
     );
 }
 

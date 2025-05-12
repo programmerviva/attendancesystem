@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext'; // यदि आप AuthContext का उपयोग कर रहे हैं
+import { useAuth } from '../../context/AuthContext' ; // यदि आप AuthContext का उपयोग कर रहे हैं
 import { useNavigate } from 'react-router-dom';
 
 function UserManagement() {
