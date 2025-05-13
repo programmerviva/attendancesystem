@@ -37,10 +37,15 @@ export const AuthProvider = ({ children }) => {
         loadUser();
     }, [token]);
 
-    const login = (newToken) => {
-        setToken(newToken);
-    };
-
+    // const login = (newToken) => {
+    //     setToken(newToken);
+    // };
+    const login = (token) => {
+        localStorage.setItem('token', token);
+        // Bearer टोकन के साथ axios डिफ़ॉल्ट हेडर सेट करें
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        setUser({ isAuthenticated: true });
+      };
     const logout = () => {
         setToken(null);
         setUser(null);

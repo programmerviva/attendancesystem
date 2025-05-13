@@ -46,34 +46,25 @@ export const signup = async (req, res, next) => {
 // 2. LOGIN
 export const login = async (req, res, next) => {
   try {
+    console.log('req.body:', req.body);
     const { email, password } = req.body;
-    
-
-    if (!email || !password) {
-      return next(new AppError('Please provide email and password!', 400));
-    }
-
-    const user = await User.findOne({ email }).select('+password');
-    
-
+    console.log('email:', email);
+    console.log('password:', password);
+    const user = await User.findOne({ email });
+    console.log('user:', user);
     if (!user || !(await bcrypt.compare(password, user.password))) {
+      console.log('Incorrect email or password');
       return next(new AppError('Incorrect email or password', 401));
     }
-
-    // Update last login
-    user.lastLogin = Date.now();
-    await user.save({ validateBeforeSave: false });
-
     const token = signToken(user._id);
-
+    console.log('token:', token);
     res.status(200).json({
       status: 'success',
       token,
-      data: {
-        user
-      }
+      user,
     });
   } catch (err) {
+    console.log('Error:', err);
     next(err);
   }
 };
