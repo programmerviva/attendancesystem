@@ -74,8 +74,7 @@ const userSchema = new mongoose.Schema({
   },
 }, { timestamps: true, toJSON: { virtuals: true } });
 
-// Password comparison method
-userSchema.methods.correctPassword = async function (candidatePassword, userPassword) {
+userSchema.methods.correctPassword = async function(candidatePassword, userPassword) {
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
