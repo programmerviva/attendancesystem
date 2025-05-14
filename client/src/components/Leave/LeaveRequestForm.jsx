@@ -53,49 +53,59 @@ function LeaveRequestForm() {
   };
 
   return (
-    <div>
-      <h2>Request Leave</h2>
-      {error && <p className="error">{error}</p>}
+    <div className="bg-white shadow-lg rounded-lg p-6 max-w-md mx-auto">
+      <h2 className="text-2xl font-bold text-blue-600 mb-4">Request Leave</h2>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
       <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="leaveType">Leave Type:</label>
+        <div className="mb-4">
+          <label htmlFor="leaveType" className="block text-gray-700">Leave Type:</label>
           <select
             id="leaveType"
             value={leaveType}
             onChange={(e) => setLeaveType(e.target.value)}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="full">Full Day</option>
             <option value="half">Half Day</option>
             <option value="short">Short Leave</option>
           </select>
         </div>
-        <div>
-          <label htmlFor="startDate">Start Date:</label>
+        <div className="mb-4">
+          <label htmlFor="startDate" className="block text-gray-700">Start Date:</label>
           <input
             type="date"
             id="startDate"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-        <div>
-          <label htmlFor="endDate">End Date:</label>
+        <div className="mb-4">
+          <label htmlFor="endDate" className="block text-gray-700">End Date:</label>
           <input
             type="date"
             id="endDate"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-        <div>
-          <label htmlFor="reason">Reason:</label>
+        <div className="mb-4">
+          <label htmlFor="reason" className="block text-gray-700">Reason:</label>
           <textarea
             id="reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            rows="4"
           />
         </div>
-        <button type="submit">Submit Request</button>
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white font-bold py-2 rounded-md hover:bg-blue-700 transition duration-200"
+        >
+          Submit Request
+        </button>
       </form>
     </div>
   );
