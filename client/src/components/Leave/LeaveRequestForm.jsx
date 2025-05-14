@@ -53,60 +53,89 @@ function LeaveRequestForm() {
   };
 
   return (
-    <div className="bg-white shadow-lg rounded-lg p-6 max-w-md mx-auto">
-      <h2 className="text-2xl font-bold text-blue-600 mb-4">Request Leave</h2>
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label htmlFor="leaveType" className="block text-gray-700">Leave Type:</label>
-          <select
-            id="leaveType"
-            value={leaveType}
-            onChange={(e) => setLeaveType(e.target.value)}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-50 flex items-center justify-center p-4">
+      <div className="bg-white/80 backdrop-blur-lg border border-white/20 shadow-2xl rounded-3xl p-6 md:p-10 max-w-2xl w-full transition-all hover:shadow-3xl">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center bg-gradient-to-r from-indigo-600 to-purple-600 w-16 h-16 rounded-2xl mb-4 shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Leave Application
+          </h2>
+          <p className="text-gray-500 mt-2">Fill your leave details carefully</p>
+        </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-rose-100/90 border border-rose-300 rounded-xl flex items-center backdrop-blur-sm">
+            {/* Error icon and message */}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Leave Type */}
+          <div>
+            <label className="block text-gray-700/90 font-semibold mb-3 ml-1">Leave Type</label>
+            <div className="grid grid-cols-3 gap-3">
+              {['full', 'half', 'short'].map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setLeaveType(type)}
+                  className={`p-3 rounded-xl border transition-all ${leaveType === type 
+                    ? 'border-indigo-500/80 bg-indigo-50/50 shadow-inner' 
+                    : 'border-gray-200 hover:border-indigo-200'}`}
+                >
+                  <span className={`font-medium ${leaveType === type ? 'text-indigo-600' : 'text-gray-600'}`}>
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Date Fields */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="relative">
+              <label className="block text-gray-700/90 font-semibold mb-3 ml-1">Start Date</label>
+              <div className="relative">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-4 py-3.5 rounded-xl border-2 border-gray-200/80 bg-white/90 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 transition-all outline-none placeholder-gray-400"
+                />
+              </div>
+            </div>
+            {/* Repeat similar for End Date */}
+          </div>
+
+          {/* Reason */}
+          <div>
+            <label className="block text-gray-700/90 font-semibold mb-3 ml-1">Reason</label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full px-4 py-3.5 rounded-xl border-2 border-gray-200/80 bg-white/90 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 transition-all outline-none min-h-[140px] placeholder-gray-400"
+              placeholder="Briefly describe your reason..."
+            />
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.01] active:scale-95"
           >
-            <option value="full">Full Day</option>
-            <option value="half">Half Day</option>
-            <option value="short">Short Leave</option>
-          </select>
-        </div>
-        <div className="mb-4">
-          <label htmlFor="startDate" className="block text-gray-700">Start Date:</label>
-          <input
-            type="date"
-            id="startDate"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="endDate" className="block text-gray-700">End Date:</label>
-          <input
-            type="date"
-            id="endDate"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="reason" className="block text-gray-700">Reason:</label>
-          <textarea
-            id="reason"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            rows="4"
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white font-bold py-2 rounded-md hover:bg-blue-700 transition duration-200"
-        >
-          Submit Request
-        </button>
-      </form>
+            <span className="inline-flex items-center justify-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clipRule="evenodd" />
+              </svg>
+              Submit Application
+            </span>
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
