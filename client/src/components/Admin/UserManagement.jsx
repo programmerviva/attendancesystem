@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext' ; // यदि आप AuthContext का उपयोग कर रहे हैं
+import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 function UserManagement() {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState(null);
-  const { token, user } = useAuth(); // यदि आप AuthContext का उपयोग कर रहे हैं
+  const { token, user } = useAuth();
   const navigate = useNavigate();
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [newUserData, setNewUserData] = useState({
@@ -20,21 +20,20 @@ function UserManagement() {
   });
 
   useEffect(() => {
-    // यदि उपयोगकर्ता लॉग इन नहीं है या एडमिन नहीं है, तो डैशबोर्ड पर रीडायरेक्ट करें
     if (!user || user.role !== 'admin') {
-      navigate('/login'); // या कोई अन्य उपयुक्त पृष्ठ
+      navigate('/login');
     }
   }, [user, navigate]);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('/api/v1/users', { // Backend API एंडपॉइंट (आपको इसे परिभाषित करना होगा)
+        const response = await axios.get('/api/v1/users', {
           headers: {
-            Authorization: `Bearer ${token}`, // यदि आप AuthContext का उपयोग कर रहे हैं
+            Authorization: `Bearer ${token}`,
           },
         });
-        setUsers(response.data.data.users); // Adjust based on your API response structure
+        setUsers(response.data.data.users);
       } catch (err) {
         setError(err.response?.data?.message || 'Could not fetch users.');
       }
@@ -46,17 +45,17 @@ function UserManagement() {
   const handleCreateUser = async () => {
     try {
       const response = await axios.post(
-        '/api/v1/auth/signup', // Backend API एंडपॉइंट (आपको इसे परिभाषित करना होगा)
+        '/api/v1/auth/signup',
         newUserData,
         {
           headers: {
-            Authorization: `Bearer ${token}`, // यदि आप AuthContext का उपयोग कर रहे हैं
+            Authorization: `Bearer ${token}`,
           },
         }
       );
       console.log('User created:', response.data);
       // उपयोगकर्ता सूची को अपडेट करें
-      fetchUsers();
+      // fetchUsers();
       setIsCreatingUser(false);
       setNewUserData({
         fullName: { first: '', last: '' },
@@ -75,14 +74,14 @@ function UserManagement() {
 
   const handleDeleteUser = async (userId) => {
     try {
-      await axios.delete(`/api/v1/users/${userId}`, { // Backend API एंडपॉइंट (आपको इसे परिभाषित करना होगा)
+      await axios.delete(`/api/v1/users/${userId}`, {
         headers: {
-          Authorization: `Bearer ${token}`, // यदि आप AuthContext का उपयोग कर रहे हैं
+          Authorization: `Bearer ${token}`,
         },
       });
       console.log('User deleted:', userId);
       // उपयोगकर्ता सूची को अपडेट करें
-      fetchUsers();
+      // fetchUsers();
       alert('User deleted successfully!');
     } catch (err) {
       setError(err.response?.data?.message || 'Could not delete user.');
@@ -90,137 +89,233 @@ function UserManagement() {
   };
 
   return (
-    <div>
-      <h2>User Management</h2>
-      {error && <p className="error">{error}</p>}
-
-      {/* उपयोगकर्ता सूची */}
-      {users.length === 0 ? (
-        <p>No users found.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Full Name</th>
-              <th>Email</th>
-              <th>Mobile</th>
-              <th>Department</th>
-              <th>Designation</th>
-              <th>Role</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user._id}>
-                <td>{user.fullName.first} {user.fullName.last}</td>
-                <td>{user.email}</td>
-                <td>{user.mobile}</td>
-                <td>{user.department}</td>
-                <td>{user.designation}</td>
-                <td>{user.role}</td>
-                <td>
-                  <button onClick={() => handleDeleteUser(user._id)}>Delete</button>
-                  {/* Edit बटन यहाँ जोड़ें */}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="container mx-auto px-4 py-8">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">User Management</h2>
+      
+      {error && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+          <p>{error}</p>
+        </div>
       )}
 
-      {/* नया उपयोगकर्ता बनाने का फ़ॉर्म */}
-      {isCreatingUser ? (
-        <div>
-          <h3>Create New User</h3>
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            handleCreateUser();
-          }}>
-            <div>
-              <label htmlFor="firstName">First Name:</label>
-              <input
-                type="text"
-                id="firstName"
-                value={newUserData.fullName.first}
-                onChange={(e) => setNewUserData({ ...newUserData, fullName: { ...newUserData.fullName, first: e.target.value } })}
-              />
-            </div>
-            <div>
-              <label htmlFor="lastName">Last Name:</label>
-              <input
-                type="text"
-                id="lastName"
-                value={newUserData.fullName.last}
-                onChange={(e) => setNewUserData({ ...newUserData, fullName: { ...newUserData.fullName, last: e.target.value } })}
-              />
-            </div>
-            <div>
-              <label htmlFor="email">Email:</label>
-              <input
-                type="email"
-                id="email"
-                value={newUserData.email}
-                onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
-              />
-            </div>
-            <div>
-              <label htmlFor="mobile">Mobile:</label>
-              <input
-                type="text"
-                id="mobile"
-                value={newUserData.mobile}
-                onChange={(e) => setNewUserData({ ...newUserData, mobile: e.target.value })}
-              />
-            </div>
-            <div>
-              <label htmlFor="department">Department:</label>
-              <select
-                id="department"
-                value={newUserData.department}
-                onChange={(e) => setNewUserData({ ...newUserData, department: e.target.value })}
-              >
-                <option value="IT">IT</option>
-                <option value="HR">HR</option>
-                <option value="Finance">Finance</option>
-                {/* अन्य विभाग विकल्प जोड़ें */}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="designation">Designation:</label>
-              <input
-                type="text"
-                id="designation"
-                value={newUserData.designation}
-                onChange={(e) => setNewUserData({ ...newUserData, designation: e.target.value })}
-              />
-            </div>
-            <div>
-              <label htmlFor="role">Role:</label>
-              <select
-                id="role"
-                value={newUserData.role}
-                onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
-              >
-                <option value="employee">Employee</option>
-                <option value="subadmin">Subadmin</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="password">Password:</label>
-              <input
-                type="password"
-                id="password"
-                value={newUserData.password}
-                onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
-              />
-            </div>
-            <button type="submit">Create User</button>
-            <button type="button" onClick={() => setIsCreatingUser(false)}>Cancel</button>
-          </form>
+      {/* User Actions */}
+      <div className="mb-6">
+        {!isCreatingUser && (
+          <button 
+            onClick={() => setIsCreatingUser(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition duration-150 ease-in-out flex items-center"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            Create New User
+          </button>
+        )}
+      </div>
+
+      {/* User List */}
+      {users.length === 0 ? (
+        <div className="bg-gray-50 rounded-lg p-6 text-center">
+          <p className="text-gray-500">No users found.</p>
         </div>
       ) : (
-        <button onClick={() => setIsCreatingUser(true)}>Create New User</button>
+        <div className="overflow-x-auto bg-white rounded-lg shadow">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Full Name</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Designation</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {users.map((user) => (
+                <tr key={user._id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{user.fullName.first} {user.fullName.last}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{user.email}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{user.mobile}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{user.department}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{user.designation}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      user.role === 'admin' 
+                        ? 'bg-purple-100 text-purple-800' 
+                        : user.role === 'subadmin' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {user.role}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button 
+                      onClick={() => handleDeleteUser(user._id)}
+                      className="text-red-600 hover:text-red-900 mr-3"
+                    >
+                      Delete
+                    </button>
+                    {/* Edit button can be added here */}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Create User Form */}
+      {isCreatingUser && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md mx-auto p-6 w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Create New User</h3>
+              <button 
+                type="button" 
+                onClick={() => setIsCreatingUser(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleCreateUser();
+            }} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">First Name</label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    value={newUserData.fullName.first}
+                    onChange={(e) => setNewUserData({ ...newUserData, fullName: { ...newUserData.fullName, first: e.target.value } })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Last Name</label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    value={newUserData.fullName.last}
+                    onChange={(e) => setNewUserData({ ...newUserData, fullName: { ...newUserData.fullName, last: e.target.value } })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  value={newUserData.email}
+                  onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="mobile" className="block text-sm font-medium text-gray-700">Mobile</label>
+                <input
+                  type="text"
+                  id="mobile"
+                  value={newUserData.mobile}
+                  onChange={(e) => setNewUserData({ ...newUserData, mobile: e.target.value })}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="department" className="block text-sm font-medium text-gray-700">Department</label>
+                <select
+                  id="department"
+                  value={newUserData.department}
+                  onChange={(e) => setNewUserData({ ...newUserData, department: e.target.value })}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                  <option value="IT">IT</option>
+                  <option value="HR">HR</option>
+                  <option value="Finance">Finance</option>
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="designation" className="block text-sm font-medium text-gray-700">Designation</label>
+                <input
+                  type="text"
+                  id="designation"
+                  value={newUserData.designation}
+                  onChange={(e) => setNewUserData({ ...newUserData, designation: e.target.value })}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
+                <select
+                  id="role"
+                  value={newUserData.role}
+                  onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                  <option value="employee">Employee</option>
+                  <option value="subadmin">Subadmin</option>
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                <input
+                  type="password"
+                  id="password"
+                  value={newUserData.password}
+                  onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  required
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsCreatingUser(false)}
+                  className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Create User
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

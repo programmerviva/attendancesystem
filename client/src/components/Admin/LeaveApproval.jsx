@@ -103,14 +103,14 @@ function LeaveApproval() {
     <div className="bg-gray-50 min-h-screen p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Leave Approval Dashboard</h1>
+        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between bg-gradient-to-r from-blue-500 to-indigo-600 p-6 rounded-lg shadow-lg">
+          <h1 className="text-2xl md:text-3xl font-bold text-white">Leave Approval Dashboard</h1>
           <div className="mt-4 md:mt-0">
             <div className="relative">
               <input
                 type="text"
                 placeholder="Search requests..."
-                className="w-full md:w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full md:w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -189,7 +189,7 @@ function LeaveApproval() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredRequests.map((request) => (
-                    <tr key={request._id} className="hover:bg-gray-50">
+                    <tr key={request._id} className="hover:bg-gray-50 transition duration-200">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
@@ -233,13 +233,13 @@ function LeaveApproval() {
                           <div className="flex justify-end space-x-2">
                             <button
                               onClick={() => handleApproveLeave(request._id)}
-                              className="text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-md text-sm"
+                              className="text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-md text-sm transition duration-200"
                             >
                               Confirm
                             </button>
                             <button
                               onClick={() => setConfirmAction(null)}
-                              className="text-gray-700 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md text-sm"
+                              className="text-gray-700 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md text-sm transition duration-200"
                             >
                               Cancel
                             </button>
@@ -248,13 +248,13 @@ function LeaveApproval() {
                           <div className="flex justify-end space-x-2">
                             <button
                               onClick={() => handleRejectLeave(request._id)}
-                              className="text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-md text-sm"
+                              className="text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-md text-sm transition duration-200"
                             >
                               Confirm
                             </button>
                             <button
                               onClick={() => setConfirmAction(null)}
-                              className="text-gray-700 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md text-sm"
+                              className="text-gray-700 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md text-sm transition duration-200"
                             >
                               Cancel
                             </button>
@@ -263,13 +263,13 @@ function LeaveApproval() {
                           <div className="flex justify-end space-x-2">
                             <button
                               onClick={() => setConfirmAction(`approve-${request._id}`)}
-                              className="text-green-600 hover:text-green-900 bg-green-100 hover:bg-green-200 px-3 py-1 rounded-md text-sm"
+                              className="text-green-600 hover:text-green-900 bg-green-100 hover:bg-green-200 px-3 py-1 rounded-md text-sm transition duration-200"
                             >
                               Approve
                             </button>
                             <button
                               onClick={() => setConfirmAction(`reject-${request._id}`)}
-                              className="text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 px-3 py-1 rounded-md text-sm"
+                              className="text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 px-3 py-1 rounded-md text-sm transition duration-200"
                             >
                               Reject
                             </button>
