@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 
 const SERVER_URL = 'http://localhost:5000'
 
+
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,7 +34,7 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('SERVER_URL/api/v1/auth/login', {
+      const response = await fetch(`${SERVER_URL}/api/v1/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
