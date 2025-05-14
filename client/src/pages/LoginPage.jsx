@@ -255,7 +255,7 @@
  
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useAuth } from '../../context/AuthContext'; // यदि आप AuthContext का उपयोग कर रहे हैं
+import { useAuth } from '../context/AuthContext'; // यदि आप AuthContext का उपयोग कर रहे हैं
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 
@@ -308,41 +308,42 @@ function LeaveRequestForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-50 flex items-center justify-center p-4">
-      <div className="bg-white/80 backdrop-blur-lg border border-white/20 shadow-2xl rounded-3xl p-6 md:p-10 max-w-2xl w-full transition-all hover:shadow-3xl">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center bg-gradient-to-r from-indigo-600 to-purple-600 w-16 h-16 rounded-2xl mb-4 shadow-lg">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
+      <div className="bg-white shadow-lg rounded-2xl p-8 md:p-10 max-w-lg w-full transition-all hover:shadow-2xl">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-purple-600 w-16 h-16 rounded-full mb-4 shadow-lg">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
-          <h2 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            Leave Application
-          </h2>
-          <p className="text-gray-500 mt-2">Fill your leave details carefully</p>
+          <h2 className="text-3xl font-bold text-blue-600">Leave Application</h2>
+          <p className="text-gray-600 mt-2">Fill your leave details carefully</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-rose-100/90 border border-rose-300 rounded-xl flex items-center backdrop-blur-sm">
-            {/* Error icon and message */}
+          <div className="mb-6 p-4 bg-red-100 border border-red-300 rounded-lg flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14h4v4h-4zm0-8h4v4h-4z" />
+            </svg>
+            <span className="text-red-600">{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Leave Type */}
           <div>
-            <label className="block text-gray-700/90 font-semibold mb-3 ml-1">Leave Type</label>
+            <label className="block text-gray-700 font-semibold mb-2">Leave Type</label>
             <div className="grid grid-cols-3 gap-3">
               {['full', 'half', 'short'].map((type) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => setLeaveType(type)}
-                  className={`p-3 rounded-xl border transition-all ${leaveType === type 
-                    ? 'border-indigo-500/80 bg-indigo-50/50 shadow-inner' 
-                    : 'border-gray-200 hover:border-indigo-200'}`}
+                  className={`p-3 rounded-lg border transition-all ${leaveType === type 
+                    ? 'border-blue-500 bg-blue-100 shadow-inner' 
+                    : 'border-gray-300 hover:border-blue-300'}`}
                 >
-                  <span className={`font-medium ${leaveType === type ? 'text-indigo-600' : 'text-gray-600'}`}>
+                  <span className={`font-medium ${leaveType === type ? 'text-blue-600' : 'text-gray-600'}`}>
                     {type.charAt(0).toUpperCase() + type.slice(1)}
                   </span>
                 </button>
@@ -352,27 +353,33 @@ function LeaveRequestForm() {
 
           {/* Date Fields */}
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="relative">
-              <label className="block text-gray-700/90 font-semibold mb-3 ml-1">Start Date</label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-4 py-3.5 rounded-xl border-2 border-gray-200/80 bg-white/90 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 transition-all outline-none placeholder-gray-400"
-                />
-              </div>
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Start Date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+              />
             </div>
-            {/* Repeat similar for End Date */}
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">End Date</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+              />
+            </div>
           </div>
 
           {/* Reason */}
           <div>
-            <label className="block text-gray-700/90 font-semibold mb-3 ml-1">Reason</label>
+            <label className="block text-gray-700 font-semibold mb-2">Reason</label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full px-4 py-3.5 rounded-xl border-2 border-gray-200/80 bg-white/90 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/50 transition-all outline-none min-h-[140px] placeholder-gray-400"
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all min-h-[140px]"
               placeholder="Briefly describe your reason..."
             />
           </div>
@@ -380,7 +387,7 @@ function LeaveRequestForm() {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.01] active:scale-95"
+            className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95"
           >
             <span className="inline-flex items-center justify-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
