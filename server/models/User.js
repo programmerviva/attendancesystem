@@ -25,8 +25,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     validate: {
-      validator: (v) => /^[0-9]{10}$/.test(v),
-      message: 'Mobile number must be 10 digits',
+      validator: (v) => /^[0-9]{10,15}$/.test(v.replace(/\D/g, '')),
+      message: 'Mobile number must be between 10-15 digits',
     },
   },
   profileImage: {
@@ -97,6 +97,11 @@ userSchema.statics.generateEmployeeId = async function () {
 
 // Pre-save hook to assign empId and hash password
 userSchema.pre('save', async function (next) {
+  // Format mobile number - remove non-digits
+  if (this.mobile) {
+    this.mobile = this.mobile.replace(/\D/g, '');
+  }
+  
   if (this.isNew && !this.empId) {
     try {
       this.empId = await this.constructor.generateEmployeeId();

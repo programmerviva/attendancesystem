@@ -7,6 +7,7 @@ import SignupPage from './pages/SignupPage';
 import AttendancePage from './pages/AttendancePage';
 import LeavePage from './pages/LeavePage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import EmployeeDashboardPage from './pages/EmployeeDashboardPage';
 import './App.css';
 
 function App() {
@@ -17,11 +18,9 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-
-                {/* Disable ProtectedRoute */}
+                <Route path="/employee/dashboard" element={<EmployeeDashboardPage />} />
                 <Route path="/attendance" element={<AttendancePage />} />
                 <Route path="/leave" element={<LeavePage />} />
-                <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
             </Routes>
         </div>
     );

@@ -43,6 +43,15 @@ function UserManagement() {
 
   const handleCreateUser = async () => {
     try {
+      // Create a simple password if none provided
+      if (!newUserData.password || newUserData.password.trim() === '') {
+        setNewUserData({
+          ...newUserData,
+          password: 'password123' // Default password
+        });
+      }
+      
+      // Send the request with a simple password
       const response = await axios.post(
         'http://localhost:5000/api/v1/auth/signup',
         newUserData,
@@ -52,7 +61,6 @@ function UserManagement() {
           },
         }
       );
-      console.log('User created:', response.data);
       
       // Reset form and close modal
       setIsCreatingUser(false);
@@ -69,7 +77,7 @@ function UserManagement() {
       // Fetch updated user list
       fetchUsers();
       
-      alert('User created successfully!');
+      alert(`User created successfully! Default password: ${newUserData.password || 'password123'}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Could not create user.');
     }
@@ -304,8 +312,9 @@ function UserManagement() {
                   value={newUserData.password}
                   onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
+                  placeholder="Leave blank for default password"
                 />
+                <p className="text-xs text-gray-500 mt-1">If left blank, a default password will be set.</p>
               </div>
               
               <div className="flex justify-end space-x-3 pt-4">

@@ -24,12 +24,15 @@ export const signup = async (req, res, next) => {
       return next(new AppError('User with this email already exists', 400));
     }
 
-    // Create new user
+    // Hash the password manually instead of relying on pre-save hook
+    const hashedPassword = await bcrypt.hash(req.body.password, 12);
+    
+    // Create new user with hashed password
     const newUser = await User.create({
       fullName: req.body.fullName,
       email: req.body.email,
       mobile: req.body.mobile,
-      password: req.body.password, // Password will be hashed in the pre-save hook
+      password: hashedPassword,
       department: req.body.department || 'Administration',
       designation: req.body.designation || 'Employee',
       role: req.body.role || 'employee'
@@ -59,7 +62,6 @@ export const login = async (req, res, next) => {
     const { email, password } = req.body;
     
     console.log('Login attempt:', email);
-    console.log('Admin email from env:', process.env.ADMIN_EMAIL);
 
     // Hardcoded admin login as fallback
     if ((email === 'admin@example.com' && password === 'admin123') || 
@@ -92,27 +94,36 @@ export const login = async (req, res, next) => {
     }
     
     // Regular employee login from MongoDB
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
+      console.log('User not found:', email);
       return next(new AppError('Incorrect email or password', 401));
     }
 
+    console.log('Found user:', user.email);
+    console.log('Password in DB:', user.password ? 'exists' : 'missing');
+    
     // Compare passwords using bcrypt
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    console.log('Password comparison result:', isPasswordCorrect);
 
     if (isPasswordCorrect) {
       const token = signToken(user._id);
       
       // Remove password from output
-      user.password = undefined;
+      const userObj = user.toObject();
+      delete userObj.password;
+      
+      console.log('Employee login successful:', userObj.email);
       
       res.status(200).json({
         status: 'success',
         token,
-        user,
+        user: userObj
       });
     } else {
+      console.log('Password incorrect for:', email);
       return next(new AppError('Incorrect email or password', 401));
     }
   } catch (err) {
