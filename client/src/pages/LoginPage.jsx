@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 
-const SERVER_URL = 'http://localhost:5000'
-
+const SERVER_URL = 'http://localhost:5000';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -15,6 +15,18 @@ const LoginPage = () => {
   useEffect(() => {
     setIsVisible(true);
     
+    // Check if user is already logged in
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    if (token && user) {
+      const userData = JSON.parse(user);
+      if (userData.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/employee/dashboard');
+      }
+    }
+    
     // Subtle animation for background elements
     const interval = setInterval(() => {
       const elements = document.querySelectorAll('.floating');
@@ -26,7 +38,7 @@ const LoginPage = () => {
     }, 3000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -34,32 +46,32 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${SERVER_URL}/api/v1/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      const response = await axios.post(`${SERVER_URL}/api/v1/auth/login`, {
+        email,
+        password
       });
 
+      const data = response.data;
       
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('token', data.token);
+      // Store token in localStorage
+      localStorage.setItem('token', data.token);
+      
+      // Store user data in localStorage
+      if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
-
+        
+        // Handle admin login
         if (data.user.role === 'admin') {
-          navigate('/admin/dashboard');
+          window.location.href = '/admin/dashboard';
         } else {
           navigate('/employee/dashboard');
         }
       } else {
-        setError(data.message || 'Login failed');
+        setError('Invalid user data received');
       }
     } catch (err) {
-      setError('Error connecting to server');
       console.error('Login error:', err);
+      setError(err.response?.data?.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
@@ -195,43 +207,13 @@ const LoginPage = () => {
                 </button>
               </div>
             </form>
-            
-            <div className="mt-8 flex items-center justify-center">
-              <div className="h-px bg-white/10 w-full"></div>
-              <div className="px-4 text-sm text-gray-400">or</div>
-              <div className="h-px bg-white/10 w-full"></div>
-            </div>
-            
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                className="w-full inline-flex justify-center py-2.5 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm font-medium text-white transition-all duration-300"
-              >
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M22.56 12.25C22.56 11.47 22.49 10.72 22.36 10H12V14.26H17.92C17.66 15.63 16.88 16.79 15.71 17.57V20.34H19.28C21.36 18.42 22.56 15.6 22.56 12.25Z" fill="#4285F4"/>
-                  <path d="M12 23C14.97 23 17.46 22 19.28 20.34L15.71 17.57C14.73 18.23 13.48 18.63 12 18.63C9.19 18.63 6.8 16.69 5.95 14.1H2.27V16.94C4.08 20.45 7.76 23 12 23Z" fill="#34A853"/>
-                  <path d="M5.95 14.1C5.75 13.47 5.63 12.79 5.63 12.09C5.63 11.39 5.75 10.71 5.95 10.09V7.25H2.27C1.46 8.68 1 10.35 1 12.09C1 13.83 1.46 15.5 2.27 16.94L5.95 14.1Z" fill="#FBBC05"/>
-                  <path d="M12 5.55C13.57 5.55 14.97 6.08 16.08 7.14L19.22 4C17.46 2.4 14.97 1.4 12 1.4C7.76 1.4 4.08 3.95 2.27 7.45L5.95 10.29C6.8 7.7 9.19 5.55 12 5.55Z" fill="#EA4335"/>
-                </svg>
-                Google
-              </button>
-              <button
-                type="button"
-                className="w-full inline-flex justify-center py-2.5 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm font-medium text-white transition-all duration-300"
-              >
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M13.397 20.997V12.801H16.162L16.573 9.592H13.397V7.548C13.397 6.622 13.655 5.989 14.984 5.989H16.668V3.127C15.8487 3.03961 15.0251 2.99856 14.201 3.001C11.757 3.001 10.079 4.492 10.079 7.231V9.586H7.332V12.795H10.085V20.997H13.397Z" />
-                </svg>
-                Facebook
-              </button>
-            </div>
           </div>
         </div>
         
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-400">
             Don't have an account?{' '}
-            <Link to="/register" className="font-medium text-[#f97316] hover:text-[#fb923c] transition-colors">
+            <Link to="/signup" className="font-medium text-[#f97316] hover:text-[#fb923c] transition-colors">
               Create account
             </Link>
           </p>
@@ -251,11 +233,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-
-
- 
- 
-
-
-
-

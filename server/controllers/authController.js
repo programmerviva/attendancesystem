@@ -1,14 +1,17 @@
-// server/controllers/authController.js
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { promisify } from 'util';
 import AppError from '../utils/appError.js';
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+
+// Ensure environment variables are loaded
+dotenv.config();
 
 // Helper to create JWT token
 const signToken = id => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN
+  return jwt.sign({ id }, process.env.JWT_SECRET || 'your-secret-key', {
+    expiresIn: process.env.JWT_EXPIRES_IN || '90d'
   });
 };
 
@@ -19,10 +22,10 @@ export const signup = async (req, res, next) => {
     const newUser = await User.create({
       fullName: req.body.fullName,
       email: req.body.email,
-      mobileNo: req.body.mobileNo,
+      mobile: req.body.mobile,
       password: hashedPassword,
-      department: req.body.department,
-      designation: req.body.designation,
+      department: req.body.department || 'Administration',
+      designation: req.body.designation || 'Employee',
       role: req.body.role || 'employee'
     });
 
@@ -46,25 +49,69 @@ export const signup = async (req, res, next) => {
 // 2. LOGIN
 export const login = async (req, res, next) => {
   try {
-    console.log('req.body:', req.body);
     const { email, password } = req.body;
-    console.log('email:', email);
-    console.log('password:', password);
+    
+    console.log('Login attempt:', email);
+    console.log('Admin email from env:', process.env.ADMIN_EMAIL);
+    // Don't log the actual password, just for debugging
+    console.log('Admin password check:', password === process.env.ADMIN_PASSWORD);
+
+    // Hardcoded admin login as fallback
+    if ((email === 'admin@example.com' && password === 'admin123') || 
+        (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD)) {
+      
+      console.log('Admin login successful');
+      
+      // Create a mock admin user object for frontend
+      const adminUser = {
+        _id: '000000000000000000000000', // Mock ID for admin
+        fullName: { first: 'Admin', last: 'User' },
+        email: email,
+        role: 'admin',
+        department: 'Administration',
+        designation: 'Administrator'
+      };
+      
+      // Generate token for admin
+      const token = jwt.sign(
+        { isAdmin: true }, 
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: process.env.JWT_EXPIRES_IN || '90d' }
+      );
+      
+      return res.status(200).json({
+        status: 'success',
+        token,
+        user: adminUser
+      });
+    }
+    
+    // Regular employee login from MongoDB
     const user = await User.findOne({ email });
-    console.log('user:', user);
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      console.log('Incorrect email or password');
+
+    if (!user) {
       return next(new AppError('Incorrect email or password', 401));
     }
-    const token = signToken(user._id);
-    console.log('token:', token);
-    res.status(200).json({
-      status: 'success',
-      token,
-      user,
-    });
+
+    // Compare passwords using bcrypt
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+
+    if (isPasswordCorrect) {
+      const token = signToken(user._id);
+      
+      // Remove password from output
+      user.password = undefined;
+      
+      res.status(200).json({
+        status: 'success',
+        token,
+        user,
+      });
+    } else {
+      return next(new AppError('Incorrect email or password', 401));
+    }
   } catch (err) {
-    console.log('Error:', err);
+    console.error('Login error:', err);
     next(err);
   }
 };
@@ -86,7 +133,22 @@ export const protect = async (req, res, next) => {
       );
     }
 
-    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    // Decode the token
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET || 'your-secret-key');
+    
+    // Check if it's an admin token
+    if (decoded.isAdmin) {
+      // Set admin user object
+      req.user = {
+        _id: '000000000000000000000000',
+        fullName: { first: 'Admin', last: 'User' },
+        email: process.env.ADMIN_EMAIL || 'admin@example.com',
+        role: 'admin'
+      };
+      return next();
+    }
+    
+    // For regular users, find in database
     const currentUser = await User.findById(decoded.id);
 
     if (!currentUser) {

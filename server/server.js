@@ -1,23 +1,22 @@
+import dotenv from 'dotenv';
+dotenv.config()
+
 import express from 'express';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import authRouter from './routes/authRoutes.js';
+import employeeRouter from './routes/employeeRoutes.js';
+import attendanceRouter from './routes/attendanceRoutes.js';
+import leaveRouter from './routes/leaveRoutes.js';
+import userRouter from './routes/userRoutes.js';
 import { globalErrorHandler } from './controllers/errorController.js';
 import initSocket from './socket/index.js';
 import http from 'http';
 import cors from 'cors';
 
-// Load environment variables
-dotenv.config();
-
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: process.env.CLIENT_URL,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-}));
+app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
@@ -27,6 +26,10 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Routes
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/employee', employeeRouter);
+app.use('/api/v1/attendance', attendanceRouter);
+app.use('/api/v1/leaves', leaveRouter);
+app.use('/api/v1/users', userRouter);
 
 // Basic route
 app.get('/', (req, res) => {
