@@ -6,7 +6,8 @@ import { useNavigate } from 'react-router-dom';
 function UserManagement() {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState(null);
-  const { token, user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const { token } = useAuth();
   const navigate = useNavigate();
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [newUserData, setNewUserData] = useState({
@@ -19,43 +20,41 @@ function UserManagement() {
     password: '',
   });
 
-  useEffect(() => {
-    if (!user || user.role !== 'admin') {
-      navigate('/login');
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get('http://localhost:5000/api/v1/users', {
+        headers: {
+          Authorization: `Bearer ${token || localStorage.getItem('token')}`,
+        },
+      });
+      setUsers(response.data.data.users);
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not fetch users.');
+    } finally {
+      setLoading(false);
     }
-  }, [user, navigate]);
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await axios.get('/api/v1/users', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setUsers(response.data.data.users);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Could not fetch users.');
-      }
-    };
-
     fetchUsers();
   }, [token]);
 
   const handleCreateUser = async () => {
     try {
       const response = await axios.post(
-        '/api/v1/auth/signup',
+        'http://localhost:5000/api/v1/auth/signup',
         newUserData,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token || localStorage.getItem('token')}`,
           },
         }
       );
       console.log('User created:', response.data);
-      // उपयोगकर्ता सूची को अपडेट करें
-      // fetchUsers();
+      
+      // Reset form and close modal
       setIsCreatingUser(false);
       setNewUserData({
         fullName: { first: '', last: '' },
@@ -66,6 +65,10 @@ function UserManagement() {
         role: 'employee',
         password: '',
       });
+      
+      // Fetch updated user list
+      fetchUsers();
+      
       alert('User created successfully!');
     } catch (err) {
       setError(err.response?.data?.message || 'Could not create user.');
@@ -73,15 +76,18 @@ function UserManagement() {
   };
 
   const handleDeleteUser = async (userId) => {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    
     try {
-      await axios.delete(`/api/v1/users/${userId}`, {
+      await axios.delete(`http://localhost:5000/api/v1/users/${userId}`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token || localStorage.getItem('token')}`,
         },
       });
-      console.log('User deleted:', userId);
-      // उपयोगकर्ता सूची को अपडेट करें
-      // fetchUsers();
+      
+      // Fetch updated user list
+      fetchUsers();
+      
       alert('User deleted successfully!');
     } catch (err) {
       setError(err.response?.data?.message || 'Could not delete user.');
@@ -100,21 +106,23 @@ function UserManagement() {
 
       {/* User Actions */}
       <div className="mb-6">
-        {!isCreatingUser && (
-          <button 
-            onClick={() => setIsCreatingUser(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition duration-150 ease-in-out flex items-center"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-            </svg>
-            Create New User
-          </button>
-        )}
+        <button 
+          onClick={() => setIsCreatingUser(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition duration-150 ease-in-out flex items-center"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+          </svg>
+          Create New User
+        </button>
       </div>
 
       {/* User List */}
-      {users.length === 0 ? (
+      {loading ? (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      ) : users.length === 0 ? (
         <div className="bg-gray-50 rounded-lg p-6 text-center">
           <p className="text-gray-500">No users found.</p>
         </div>
@@ -168,7 +176,6 @@ function UserManagement() {
                     >
                       Delete
                     </button>
-                    {/* Edit button can be added here */}
                   </td>
                 </tr>
               ))}
@@ -179,7 +186,7 @@ function UserManagement() {
 
       {/* Create User Form */}
       {isCreatingUser && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
           <div className="relative bg-white rounded-lg shadow-xl max-w-md mx-auto p-6 w-full">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">Create New User</h3>
@@ -258,6 +265,9 @@ function UserManagement() {
                   <option value="IT">IT</option>
                   <option value="HR">HR</option>
                   <option value="Finance">Finance</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Sales">Sales</option>
+                  <option value="Administration">Administration</option>
                 </select>
               </div>
               

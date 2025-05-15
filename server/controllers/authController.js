@@ -18,12 +18,18 @@ const signToken = id => {
 // 1. SIGNUP
 export const signup = async (req, res, next) => {
   try {
-    const hashedPassword = await bcrypt.hash(req.body.password, 12);
+    // Check if user with this email already exists
+    const existingUser = await User.findOne({ email: req.body.email });
+    if (existingUser) {
+      return next(new AppError('User with this email already exists', 400));
+    }
+
+    // Create new user
     const newUser = await User.create({
       fullName: req.body.fullName,
       email: req.body.email,
       mobile: req.body.mobile,
-      password: hashedPassword,
+      password: req.body.password, // Password will be hashed in the pre-save hook
       department: req.body.department || 'Administration',
       designation: req.body.designation || 'Employee',
       role: req.body.role || 'employee'
@@ -42,6 +48,7 @@ export const signup = async (req, res, next) => {
       }
     });
   } catch (err) {
+    console.error('Signup error:', err);
     next(err);
   }
 };
@@ -53,8 +60,6 @@ export const login = async (req, res, next) => {
     
     console.log('Login attempt:', email);
     console.log('Admin email from env:', process.env.ADMIN_EMAIL);
-    // Don't log the actual password, just for debugging
-    console.log('Admin password check:', password === process.env.ADMIN_PASSWORD);
 
     // Hardcoded admin login as fallback
     if ((email === 'admin@example.com' && password === 'admin123') || 

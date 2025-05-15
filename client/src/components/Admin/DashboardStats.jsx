@@ -21,33 +21,46 @@ function DashboardStats() {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        // Fetch pending leaves
-        const leavesRes = await axios.get('http://localhost:5000/api/v1/leaves/pending/count', {
+        // Fetch pending leaves (if API exists)
+        let pendingLeaves = 0;
+        try {
+          const leavesRes = await axios.get('http://localhost:5000/api/v1/leaves/pending/count', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          pendingLeaves = leavesRes.data?.count || 0;
+        } catch (error) {
+          console.log('Pending leaves API not available yet');
+        }
+
+        // Get unique departments count
+        const usersRes = await axios.get('http://localhost:5000/api/v1/users', {
           headers: { Authorization: `Bearer ${token}` }
         });
-
-        // Set stats with real data or fallback to dummy data if API fails
+        
+        const users = usersRes.data?.data?.users || [];
+        const uniqueDepartments = new Set(users.map(user => user.department));
+        
+        // Set stats with real data
         setStats({
-          employees: employeesRes.data?.count || 124,
-          pendingLeaves: leavesRes.data?.count || 8,
-          departments: 12, // This could be fetched from an API if available
-          newRequests: 3,  // This could be fetched from an API if available
+          employees: employeesRes.data?.count || 0,
+          pendingLeaves: pendingLeaves,
+          departments: uniqueDepartments.size || 0,
+          newRequests: 0, // This could be fetched from a real API if available
           isLoading: false
         });
       } catch (error) {
         console.error("Error fetching dashboard stats:", error);
-        // Fallback to dummy data if API fails
-        setStats({
-          employees: 124,
-          pendingLeaves: 8,
-          departments: 12,
-          newRequests: 3,
-          isLoading: false
-        });
+        // Fallback to loading state
+        setStats(prev => ({...prev, isLoading: false}));
       }
     };
 
     fetchStats();
+    
+    // Set up interval to refresh stats every 30 seconds
+    const interval = setInterval(fetchStats, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const renderIcon = (iconName) => {
