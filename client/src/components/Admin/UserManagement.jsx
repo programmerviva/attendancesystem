@@ -43,24 +43,27 @@ function UserManagement() {
 
   const handleCreateUser = async () => {
     try {
-      // Create a simple password if none provided
-      if (!newUserData.password || newUserData.password.trim() === '') {
-        setNewUserData({
-          ...newUserData,
-          password: 'password123' // Default password
-        });
+      // Ensure password is set
+      const userData = { ...newUserData };
+      if (!userData.password || userData.password.trim() === '') {
+        userData.password = 'password123'; // Default password
       }
       
-      // Send the request with a simple password
+      console.log('Creating user with data:', userData);
+      
+      // Send the request
       const response = await axios.post(
         'http://localhost:5000/api/v1/auth/signup',
-        newUserData,
+        userData,
         {
           headers: {
             Authorization: `Bearer ${token || localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
           },
         }
       );
+      
+      console.log('User creation response:', response.data);
       
       // Reset form and close modal
       setIsCreatingUser(false);
@@ -77,8 +80,9 @@ function UserManagement() {
       // Fetch updated user list
       fetchUsers();
       
-      alert(`User created successfully! Default password: ${newUserData.password || 'password123'}`);
+      alert(`User created successfully! Login credentials:\nEmail: ${userData.email}\nPassword: ${userData.password}`);
     } catch (err) {
+      console.error('Error creating user:', err);
       setError(err.response?.data?.message || 'Could not create user.');
     }
   };
@@ -312,7 +316,7 @@ function UserManagement() {
                   value={newUserData.password}
                   onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Leave blank for default password"
+                  placeholder="Enter password or leave for default"
                 />
                 <p className="text-xs text-gray-500 mt-1">If left blank, a default password will be set.</p>
               </div>

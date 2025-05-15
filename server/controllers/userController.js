@@ -1,5 +1,7 @@
 import User from '../models/User.js';
 import AppError from '../utils/appError.js';
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 // Get all users
 export const getAllUsers = async (req, res, next) => {

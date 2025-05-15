@@ -4,6 +4,7 @@ import { promisify } from 'util';
 import AppError from '../utils/appError.js';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 
 // Ensure environment variables are loaded
 dotenv.config();
@@ -15,7 +16,7 @@ const signToken = id => {
   });
 };
 
-// 1. SIGNUP
+// 1. SIGNUP - COMPLETELY REWRITTEN TO BYPASS MODEL HOOKS
 export const signup = async (req, res, next) => {
   try {
     // Check if user with this email already exists
@@ -24,30 +25,49 @@ export const signup = async (req, res, next) => {
       return next(new AppError('User with this email already exists', 400));
     }
 
-    // Hash the password manually instead of relying on pre-save hook
+    // Hash the password manually
     const hashedPassword = await bcrypt.hash(req.body.password, 12);
     
-    // Create new user with hashed password
-    const newUser = await User.create({
+    // Generate employee ID
+    const currentYear = new Date().getFullYear();
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const empId = `${randomNum}${currentYear}`;
+    
+    // Create user document directly using MongoDB driver
+    const db = mongoose.connection.db;
+    const usersCollection = db.collection('users');
+    
+    const newUser = {
+      empId: empId,
       fullName: req.body.fullName,
       email: req.body.email,
       mobile: req.body.mobile,
       password: hashedPassword,
       department: req.body.department || 'Administration',
       designation: req.body.designation || 'Employee',
-      role: req.body.role || 'employee'
-    });
-
-    const token = signToken(newUser._id);
+      role: req.body.role || 'employee',
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    // Insert directly into MongoDB collection
+    const result = await usersCollection.insertOne(newUser);
+    
+    // Get the inserted document
+    const insertedUser = await usersCollection.findOne({ _id: result.insertedId });
+    
+    // Create token
+    const token = signToken(insertedUser._id);
 
     // Remove password from output
-    newUser.password = undefined;
+    delete insertedUser.password;
 
     res.status(201).json({
       status: 'success',
       token,
       data: {
-        user: newUser
+        user: insertedUser
       }
     });
   } catch (err) {
@@ -66,8 +86,6 @@ export const login = async (req, res, next) => {
     // Hardcoded admin login as fallback
     if ((email === 'admin@example.com' && password === 'admin123') || 
         (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD)) {
-      
-      console.log('Admin login successful');
       
       // Create a mock admin user object for frontend
       const adminUser = {
@@ -93,16 +111,17 @@ export const login = async (req, res, next) => {
       });
     }
     
-    // Regular employee login from MongoDB
-    const user = await User.findOne({ email }).select('+password');
+    // Regular employee login - USING DIRECT MONGODB QUERY
+    const db = mongoose.connection.db;
+    const usersCollection = db.collection('users');
+    const user = await usersCollection.findOne({ email: email });
 
     if (!user) {
       console.log('User not found:', email);
       return next(new AppError('Incorrect email or password', 401));
     }
 
-    console.log('Found user:', user.email);
-    console.log('Password in DB:', user.password ? 'exists' : 'missing');
+    console.log('User found:', user.email);
     
     // Compare passwords using bcrypt
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
@@ -112,15 +131,14 @@ export const login = async (req, res, next) => {
       const token = signToken(user._id);
       
       // Remove password from output
-      const userObj = user.toObject();
-      delete userObj.password;
+      delete user.password;
       
-      console.log('Employee login successful:', userObj.email);
+      console.log('Login successful for:', user.email);
       
       res.status(200).json({
         status: 'success',
         token,
-        user: userObj
+        user: user
       });
     } else {
       console.log('Password incorrect for:', email);
@@ -164,8 +182,10 @@ export const protect = async (req, res, next) => {
       return next();
     }
     
-    // For regular users, find in database
-    const currentUser = await User.findById(decoded.id);
+    // For regular users, find in database using direct MongoDB query
+    const db = mongoose.connection.db;
+    const usersCollection = db.collection('users');
+    const currentUser = await usersCollection.findOne({ _id: new mongoose.Types.ObjectId(decoded.id) });
 
     if (!currentUser) {
       return next(new AppError('User no longer exists.', 401));
