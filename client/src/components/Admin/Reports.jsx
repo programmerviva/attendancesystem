@@ -371,160 +371,162 @@ function Reports() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4">
-        <h2 className="text-2xl font-bold text-white">Reports Dashboard</h2>
-        <p className="text-blue-100">View and generate reports</p>
-      </div>
-
-      <div className="p-6">
-        {/* Report Type Selection */}
-        <div className="mb-6 border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => {
-                setActiveReport('attendance');
-                setReportGenerated(false);
-              }}
-              className={`${
-                activeReport === 'attendance'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Attendance Report
-            </button>
-            <button
-              onClick={() => {
-                setActiveReport('leave');
-                setReportGenerated(false);
-              }}
-              className={`${
-                activeReport === 'leave'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Leave Report
-            </button>
-            <button
-              onClick={() => {
-                setActiveReport('department');
-                setReportGenerated(false);
-              }}
-              className={`${
-                activeReport === 'department'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Department Report
-            </button>
-            <button
-              onClick={() => {
-                setActiveReport('custom');
-                setReportGenerated(false);
-              }}
-              className={`${
-                activeReport === 'custom'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-            >
-              Custom Report
-            </button>
-          </nav>
+    <div>
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4">
+          <h2 className="text-2xl font-bold text-white">Reports Dashboard</h2>
+          <p className="text-blue-100">View and generate reports</p>
         </div>
 
-        {/* Date Range Selection */}
-        {activeReport !== 'custom' && (
-          <div className="mb-6 bg-gray-50 p-4 rounded-lg">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                <input
-                  type="date"
-                  id="startDate"
-                  value={dateRange.startDate}
-                  onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
-                  className="border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 w-full"
-                />
-              </div>
-              <div>
-                <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                <input
-                  type="date"
-                  id="endDate"
-                  value={dateRange.endDate}
-                  onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
-                  className="border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 w-full"
-                />
-              </div>
-              <div className="flex items-end">
-                <button
-                  onClick={generateReport}
-                  disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition-colors w-full"
-                >
-                  {loading ? 'Generating...' : 'Generate Report'}
-                </button>
-              </div>
-            </div>
+        <div className="p-6">
+          {/* Report Type Selection */}
+          <div className="mb-6 border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => {
+                  setActiveReport('attendance');
+                  setReportGenerated(false);
+                }}
+                className={`${
+                  activeReport === 'attendance'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              >
+                Attendance Report
+              </button>
+              <button
+                onClick={() => {
+                  setActiveReport('leave');
+                  setReportGenerated(false);
+                }}
+                className={`${
+                  activeReport === 'leave'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              >
+                Leave Report
+              </button>
+              <button
+                onClick={() => {
+                  setActiveReport('department');
+                  setReportGenerated(false);
+                }}
+                className={`${
+                  activeReport === 'department'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              >
+                Department Report
+              </button>
+              <button
+                onClick={() => {
+                  setActiveReport('custom');
+                  setReportGenerated(false);
+                }}
+                className={`${
+                  activeReport === 'custom'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              >
+                Custom Report
+              </button>
+            </nav>
           </div>
-        )}
-        
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Report Results */}
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : (
-          <>
-            {reportGenerated && reportData.length > 0 && (
-              <div className="flex justify-end mb-4">
-                <button
-                  onClick={exportToCSV}
-                  className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition-colors flex items-center"
-                >
-                  <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Export to CSV
-                </button>
-              </div>
-            )}
-            
-            <div className="overflow-x-auto">
-              {renderActiveReport()}
-            </div>
-          </>
-        )}
-      </div>
-    </div>
 
-    {/* Employee Attendance Calendar Modal */}
-    {selectedEmployee && (
-      <SimpleAttendanceCalendar 
-        employeeId={selectedEmployee} 
-        onClose={() => setSelectedEmployee(null)} 
-      />
-    )}
+          {/* Date Range Selection */}
+          {activeReport !== 'custom' && (
+            <div className="mb-6 bg-gray-50 p-4 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    id="startDate"
+                    value={dateRange.startDate}
+                    onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
+                    className="border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 w-full"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                  <input
+                    type="date"
+                    id="endDate"
+                    value={dateRange.endDate}
+                    onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
+                    className="border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 w-full"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={generateReport}
+                    disabled={loading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition-colors w-full"
+                  >
+                    {loading ? 'Generating...' : 'Generate Report'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Report Results */}
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : (
+            <>
+              {reportGenerated && reportData.length > 0 && (
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={exportToCSV}
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition-colors flex items-center"
+                  >
+                    <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export to CSV
+                  </button>
+                </div>
+              )}
+              
+              <div className="overflow-x-auto">
+                {renderActiveReport()}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Employee Attendance Calendar Modal */}
+      {selectedEmployee && (
+        <SimpleAttendanceCalendar 
+          employeeId={selectedEmployee} 
+          onClose={() => setSelectedEmployee(null)} 
+        />
+      )}
+    </div>
   );
 }
 
