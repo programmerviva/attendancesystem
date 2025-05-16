@@ -65,6 +65,12 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
       record.date === date
     );
     
+    // Check if it's a weekend
+    const dayOfWeek = dayjs(date).day();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return { status: 'weekend', color: 'bg-gray-200' };
+    }
+    
     if (!dayRecord) {
       return { status: 'absent', color: 'bg-red-200' };
     }
@@ -117,6 +123,13 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
       record.date === date
     );
     
+    // Check if it's a weekend
+    const dayOfWeek = dayjs(date).day();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      alert(`${date}: Weekend`);
+      return;
+    }
+    
     if (!dayRecord) {
       alert(`${date}: Absent`);
       return;
@@ -150,9 +163,31 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
+  // Calculate attendance statistics
+  const presentDays = attendanceData.filter(record => 
+    record.status === 'present'
+  ).length;
+  
+  const shortLeaveDays = attendanceData.filter(record => 
+    record.status === 'short-leave'
+  ).length;
+  
+  const halfDays = attendanceData.filter(record => 
+    record.status === 'half-day'
+  ).length;
+  
+  // Calculate weekends
+  const weekendDays = Array.from({ length: dayjs().year(currentYear).month(currentMonth).daysInMonth() }, 
+    (_, i) => dayjs().year(currentYear).month(currentMonth).date(i + 1).day())
+    .filter(day => day === 0 || day === 6).length;
+  
+  // Calculate absent days (excluding weekends)
+  const workingDays = dayjs().year(currentYear).month(currentMonth).daysInMonth() - weekendDays;
+  const absentDays = workingDays - presentDays - shortLeaveDays - halfDays;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 flex justify-between items-center">
           <h2 className="text-xl font-bold text-white">Employee Attendance Calendar</h2>
           <button 
@@ -166,69 +201,127 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
         </div>
 
         <div className="p-6">
-          {/* Month Navigation */}
-          <div className="flex justify-between items-center mb-4">
-            <button 
-              onClick={previousMonth}
-              className="p-2 rounded-full hover:bg-gray-200"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            </button>
-            <h3 className="text-lg font-medium">{monthNames[currentMonth]} {currentYear}</h3>
-            <button 
-              onClick={nextMonth}
-              className="p-2 rounded-full hover:bg-gray-200"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Calendar Legend */}
-          <div className="flex space-x-4 mb-4">
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-green-200 mr-1"></div>
-              <span className="text-xs">Present</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-blue-200 mr-1"></div>
-              <span className="text-xs">Short Leave</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-yellow-200 mr-1"></div>
-              <span className="text-xs">Half Day</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-red-200 mr-1"></div>
-              <span className="text-xs">Absent</span>
-            </div>
-          </div>
-
-          {/* Calendar */}
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-          ) : (
-            <div>
-              {/* Day headers */}
-              <div className="grid grid-cols-7 gap-1 mb-1">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="text-center font-medium text-sm py-2 bg-gray-100">
-                    {day}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Left Column - Monthly Summary */}
+            <div className="md:col-span-1">
+              <div className="bg-gray-50 p-4 rounded-lg h-full">
+                <h3 className="text-lg font-medium mb-4">Monthly Summary</h3>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Present Days</p>
+                    <p className="font-medium text-lg">{presentDays}</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: `${(presentDays / workingDays) * 100}%` }}></div>
+                    </div>
                   </div>
-                ))}
-              </div>
-              
-              {/* Calendar grid */}
-              <div className="grid grid-cols-7 gap-1">
-                {renderCalendar()}
+                  <div>
+                    <p className="text-sm text-gray-500">Short Leaves</p>
+                    <p className="font-medium text-lg">{shortLeaveDays}</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${(shortLeaveDays / workingDays) * 100}%` }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Half Days</p>
+                    <p className="font-medium text-lg">{halfDays}</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${(halfDays / workingDays) * 100}%` }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Absent Days</p>
+                    <p className="font-medium text-lg">{absentDays}</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="bg-red-500 h-2 rounded-full" style={{ width: `${(absentDays / workingDays) * 100}%` }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Weekends</p>
+                    <p className="font-medium text-lg">{weekendDays}</p>
+                  </div>
+                  <div className="pt-4 border-t border-gray-200">
+                    <p className="text-sm text-gray-500">Total Working Days</p>
+                    <p className="font-medium text-lg">{workingDays}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Attendance Rate</p>
+                    <p className="font-medium text-lg">{Math.round((presentDays / workingDays) * 100)}%</p>
+                  </div>
+                </div>
               </div>
             </div>
-          )}
+            
+            {/* Right Column - Calendar */}
+            <div className="md:col-span-2">
+              {/* Month Navigation */}
+              <div className="flex justify-between items-center mb-4">
+                <button 
+                  onClick={previousMonth}
+                  className="p-2 rounded-full hover:bg-gray-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                <h3 className="text-lg font-medium">{monthNames[currentMonth]} {currentYear}</h3>
+                <button 
+                  onClick={nextMonth}
+                  className="p-2 rounded-full hover:bg-gray-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Calendar Legend */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-green-200 mr-1"></div>
+                  <span className="text-xs">Present</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-blue-200 mr-1"></div>
+                  <span className="text-xs">Short Leave</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-yellow-200 mr-1"></div>
+                  <span className="text-xs">Half Day</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-red-200 mr-1"></div>
+                  <span className="text-xs">Absent</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-gray-200 mr-1"></div>
+                  <span className="text-xs">Weekend</span>
+                </div>
+              </div>
+
+              {/* Calendar */}
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <div>
+                  {/* Day headers */}
+                  <div className="grid grid-cols-7 gap-1 mb-1">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                      <div key={day} className="text-center font-medium text-sm py-2 bg-gray-100">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Calendar grid */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {renderCalendar()}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

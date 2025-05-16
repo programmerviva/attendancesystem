@@ -15,10 +15,15 @@ function EmployeeDashboardPage() {
     total: 0
   });
   const [error, setError] = useState(null);
+  const [currentMonth, setCurrentMonth] = useState(dayjs().month());
+  const [currentYear, setCurrentYear] = useState(dayjs().year());
+  const [monthlyAttendance, setMonthlyAttendance] = useState([]);
+  const [calendarLoading, setCalendarLoading] = useState(false);
+
   const navigate = useNavigate();
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     
     if (!token) {
@@ -36,7 +41,7 @@ function EmployeeDashboardPage() {
       }
 
       // Fetch dashboard data
-      fetchDashboardData(token);
+      fetchDashboardData();
     } catch (error) {
       console.error('Error parsing user data:', error);
       localStorage.removeItem('token');
@@ -47,7 +52,12 @@ function EmployeeDashboardPage() {
     }
   }, [navigate]);
 
-  const fetchDashboardData = async (token) => {
+  // Fetch monthly attendance data when month/year changes
+  useEffect(() => {
+    fetchMonthlyAttendance();
+  }, [currentMonth, currentYear]);
+
+  const fetchDashboardData = async () => {
     try {
       // Fetch today's attendance
       const attendanceRes = await axios.get('http://localhost:5000/api/v1/attendance/today', {
@@ -59,31 +69,57 @@ function EmployeeDashboardPage() {
       const leavesRes = await axios.get('http://localhost:5000/api/v1/leaves', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setRecentLeaves(leavesRes.data.data.leaves?.slice(0, 5) || []); // Get only the 5 most recent
+      setRecentLeaves(leavesRes.data.data.leaves?.slice(0, 5) || []);
 
-      // Fetch attendance history for the current month
-      const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
-      const endOfMonth = dayjs().endOf('month').format('YYYY-MM-DD');
+      // Fetch current month's attendance summary
+      fetchMonthlyAttendance();
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+    }
+  };
+
+  const fetchMonthlyAttendance = async () => {
+    setCalendarLoading(true);
+    try {
+      const startOfMonth = dayjs().year(currentYear).month(currentMonth).startOf('month').format('YYYY-MM-DD');
+      const endOfMonth = dayjs().year(currentYear).month(currentMonth).endOf('month').format('YYYY-MM-DD');
       
       const summaryRes = await axios.get('http://localhost:5000/api/v1/attendance/history', {
         headers: { Authorization: `Bearer ${token}` },
         params: { startDate: startOfMonth, endDate: endOfMonth }
       });
       
-      // Calculate summary
+      // Get attendance records
       const records = summaryRes.data.data.attendance || [];
+      setMonthlyAttendance(records);
+      
+      // Calculate summary
       const present = records.filter(r => r.status === 'present').length;
       const absent = records.filter(r => r.status === 'absent').length;
       const late = records.filter(r => r.status === 'late').length;
+      const halfDay = records.filter(r => r.status === 'half-day').length;
+      
+      // Calculate working days (excluding weekends)
+      const daysInMonth = dayjs().year(currentYear).month(currentMonth).daysInMonth();
+      const weekendDays = Array.from({ length: daysInMonth }, 
+        (_, i) => dayjs().year(currentYear).month(currentMonth).date(i + 1).day())
+        .filter(day => day === 0 || day === 6).length;
+      
+      const workingDays = daysInMonth - weekendDays;
       
       setAttendanceSummary({
         present,
         absent,
         late,
+        halfDay,
+        workingDays,
+        weekendDays,
         total: records.length
       });
     } catch (err) {
-      console.error('Error fetching dashboard data:', err);
+      console.error('Error fetching monthly attendance:', err);
+    } finally {
+      setCalendarLoading(false);
     }
   };
 
@@ -108,6 +144,94 @@ function EmployeeDashboardPage() {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const getAttendanceStatus = (date) => {
+    // Check if it's a weekend
+    const dayOfWeek = dayjs(date).day();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return { status: 'weekend', color: 'bg-gray-200' };
+    }
+    
+    // Find attendance record for this date
+    const record = monthlyAttendance.find(r => 
+      dayjs(r.date).format('YYYY-MM-DD') === date
+    );
+    
+    if (!record) {
+      // If date is in the future, show as upcoming
+      if (dayjs(date).isAfter(dayjs(), 'day')) {
+        return { status: 'upcoming', color: 'bg-white' };
+      }
+      // Otherwise, show as absent
+      return { status: 'absent', color: 'bg-red-200' };
+    }
+    
+    switch (record.status) {
+      case 'present':
+        return { status: 'present', color: 'bg-green-200' };
+      case 'late':
+        return { status: 'late', color: 'bg-blue-200' };
+      case 'half-day':
+        return { status: 'half-day', color: 'bg-yellow-200' };
+      case 'absent':
+        return { status: 'absent', color: 'bg-red-200' };
+      default:
+        return { status: record.status, color: 'bg-gray-100' };
+    }
+  };
+
+  const renderCalendar = () => {
+    const daysInMonth = dayjs().year(currentYear).month(currentMonth).daysInMonth();
+    const firstDayOfMonth = dayjs().year(currentYear).month(currentMonth).startOf('month').day(); // 0 = Sunday
+    
+    const days = [];
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      days.push(<div key={`empty-${i}`} className="h-10 border border-gray-200"></div>);
+    }
+    
+    // Add cells for each day of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = dayjs().year(currentYear).month(currentMonth).date(day).format('YYYY-MM-DD');
+      const { status, color } = getAttendanceStatus(date);
+      
+      days.push(
+        <div 
+          key={day} 
+          className={`h-10 border border-gray-200 ${color} flex flex-col justify-between p-1`}
+        >
+          <span className="text-xs font-medium">{day}</span>
+          <span className="text-xs capitalize">{status.replace('-', ' ')}</span>
+        </div>
+      );
+    }
+    
+    return days;
+  };
+
+  const previousMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const nextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
 
   if (loading) {
     return (
@@ -239,28 +363,122 @@ function EmployeeDashboardPage() {
           </div>
         </div>
 
-        {/* Monthly Summary */}
+        {/* Monthly Summary with Calendar */}
         <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
           <div className="px-4 py-5 sm:px-6 bg-gradient-to-r from-blue-500 to-blue-600">
             <h3 className="text-lg leading-6 font-medium text-white">Monthly Attendance Summary</h3>
           </div>
           <div className="px-4 py-5 sm:p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-green-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-gray-500">Present Days</p>
-                <p className="text-2xl font-bold text-green-600">{attendanceSummary.present}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Left Column - Monthly Summary */}
+              <div className="space-y-4">
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500">Present Days</p>
+                  <p className="text-2xl font-bold text-green-600">{attendanceSummary.present || 0}</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                    <div className="bg-green-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.present || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
+                  </div>
+                </div>
+                
+                <div className="bg-red-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500">Absent Days</p>
+                  <p className="text-2xl font-bold text-red-600">{attendanceSummary.absent || 0}</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                    <div className="bg-red-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.absent || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500">Late Days</p>
+                  <p className="text-2xl font-bold text-blue-600">{attendanceSummary.late || 0}</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.late || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
+                  </div>
+                </div>
+                
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500">Half Days</p>
+                  <p className="text-2xl font-bold text-yellow-600">{attendanceSummary.halfDay || 0}</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                    <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.halfDay || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500">Working Days</p>
+                  <p className="text-2xl font-bold text-gray-600">{attendanceSummary.workingDays || 0}</p>
+                </div>
               </div>
-              <div className="bg-red-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-gray-500">Absent Days</p>
-                <p className="text-2xl font-bold text-red-600">{attendanceSummary.absent}</p>
-              </div>
-              <div className="bg-yellow-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-gray-500">Late Days</p>
-                <p className="text-2xl font-bold text-yellow-600">{attendanceSummary.late}</p>
-              </div>
-              <div className="bg-blue-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-gray-500">Working Days</p>
-                <p className="text-2xl font-bold text-blue-600">{dayjs().daysInMonth()}</p>
+              
+              {/* Right Column - Calendar */}
+              <div className="md:col-span-2">
+                {/* Month Navigation */}
+                <div className="flex justify-between items-center mb-4">
+                  <button 
+                    onClick={previousMonth}
+                    className="p-2 rounded-full hover:bg-gray-200"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  <h3 className="text-lg font-medium">{monthNames[currentMonth]} {currentYear}</h3>
+                  <button 
+                    onClick={nextMonth}
+                    className="p-2 rounded-full hover:bg-gray-200"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Calendar Legend */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-green-200 mr-1"></div>
+                    <span className="text-xs">Present</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-blue-200 mr-1"></div>
+                    <span className="text-xs">Late</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-yellow-200 mr-1"></div>
+                    <span className="text-xs">Half Day</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-red-200 mr-1"></div>
+                    <span className="text-xs">Absent</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 bg-gray-200 mr-1"></div>
+                    <span className="text-xs">Weekend</span>
+                  </div>
+                </div>
+
+                {/* Calendar */}
+                {calendarLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : (
+                  <div>
+                    {/* Day headers */}
+                    <div className="grid grid-cols-7 gap-1 mb-1">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                        <div key={day} className="text-center font-medium text-sm py-2 bg-gray-100">
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Calendar grid */}
+                    <div className="grid grid-cols-7 gap-1">
+                      {renderCalendar()}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
