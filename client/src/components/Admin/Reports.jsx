@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import SimpleAttendanceCalendar from './SimpleAttendanceCalendar';
 
 function Reports() {
   const [activeReport, setActiveReport] = useState('attendance');
@@ -12,6 +13,7 @@ function Reports() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [reportGenerated, setReportGenerated] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
 
   const token = localStorage.getItem('token');
 
@@ -147,6 +149,10 @@ function Reports() {
     document.body.removeChild(link);
   };
 
+  const handleEmployeeClick = (employeeId) => {
+    setSelectedEmployee(employeeId);
+  };
+
   const renderAttendanceReport = () => {
     return (
       <table className="min-w-full divide-y divide-gray-200">
@@ -164,7 +170,10 @@ function Reports() {
           {reportData.map((record) => (
             <tr key={record._id} className="hover:bg-gray-50">
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center">
+                <div 
+                  className="flex items-center cursor-pointer hover:text-blue-600"
+                  onClick={() => handleEmployeeClick(record.user?._id)}
+                >
                   <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
                     <span className="text-gray-600 font-medium">
                       {record.user?.fullName?.first?.charAt(0) || '?'}{record.user?.fullName?.last?.charAt(0) || '?'}
@@ -508,6 +517,14 @@ function Reports() {
         )}
       </div>
     </div>
+
+    {/* Employee Attendance Calendar Modal */}
+    {selectedEmployee && (
+      <SimpleAttendanceCalendar 
+        employeeId={selectedEmployee} 
+        onClose={() => setSelectedEmployee(null)} 
+      />
+    )}
   );
 }
 
