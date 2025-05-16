@@ -154,3 +154,117 @@ export const getTodayAttendance = async (req, res, next) => {
     next(err);
   }
 };
+
+// Get attendance summary for a specific date (admin only)
+export const getAttendanceSummary = async (req, res, next) => {
+  try {
+    // Check if user is admin or subadmin
+    if (req.user.role !== 'admin' && req.user.role !== 'subadmin') {
+      return next(new AppError('You do not have permission to perform this action', 403));
+    }
+    
+    const { date } = req.query;
+    const targetDate = date ? dayjs(date).startOf('day').toDate() : dayjs().startOf('day').toDate();
+    
+    // Count present employees for the date
+    const presentCount = await Attendance.countDocuments({
+      date: {
+        $gte: targetDate,
+        $lt: dayjs(targetDate).add(1, 'day').toDate()
+      },
+      status: 'present'
+    });
+    
+    // Count late employees for the date
+    const lateCount = await Attendance.countDocuments({
+      date: {
+        $gte: targetDate,
+        $lt: dayjs(targetDate).add(1, 'day').toDate()
+      },
+      status: 'late'
+    });
+    
+    // Count absent employees for the date
+    const absentCount = await Attendance.countDocuments({
+      date: {
+        $gte: targetDate,
+        $lt: dayjs(targetDate).add(1, 'day').toDate()
+      },
+      status: 'absent'
+    });
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        date: dayjs(targetDate).format('YYYY-MM-DD'),
+        present: presentCount,
+        late: lateCount,
+        absent: absentCount,
+        total: presentCount + lateCount + absentCount
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Get all attendance records for a specific date (admin only)
+export const getAllAttendance = async (req, res, next) => {
+  try {
+    // Check if user is admin or subadmin
+    if (req.user.role !== 'admin' && req.user.role !== 'subadmin') {
+      return next(new AppError('You do not have permission to perform this action', 403));
+    }
+    
+    const { date, startDate, endDate } = req.query;
+    let dateFilter = {};
+    
+    if (date) {
+      const targetDate = dayjs(date).startOf('day').toDate();
+      dateFilter = {
+        date: {
+          $gte: targetDate,
+          $lt: dayjs(targetDate).add(1, 'day').toDate()
+        }
+      };
+    } else if (startDate && endDate) {
+      dateFilter = {
+        date: {
+          $gte: new Date(startDate),
+          $lte: new Date(endDate)
+        }
+      };
+    } else if (startDate) {
+      dateFilter = { date: { $gte: new Date(startDate) } };
+    } else if (endDate) {
+      dateFilter = { date: { $lte: new Date(endDate) } };
+    } else {
+      // Default to today if no date parameters provided
+      const today = dayjs().startOf('day').toDate();
+      dateFilter = {
+        date: {
+          $gte: today,
+          $lt: dayjs(today).add(1, 'day').toDate()
+        }
+      };
+    }
+    
+    // Get attendance records with user details
+    const attendanceRecords = await Attendance.find(dateFilter)
+      .populate({
+        path: 'user',
+        select: 'fullName email department designation'
+      })
+      .sort({ date: -1 });
+    
+    res.status(200).json({
+      status: 'success',
+      results: attendanceRecords.length,
+      data: {
+        attendance: attendanceRecords
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};

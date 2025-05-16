@@ -8,6 +8,8 @@ import employeeRouter from './routes/employeeRoutes.js';
 import attendanceRouter from './routes/attendanceRoutes.js';
 import leaveRouter from './routes/leaveRoutes.js';
 import userRouter from './routes/userRoutes.js';
+import activityRouter from './routes/activityRoutes.js';
+import settingsRouter from './routes/settingsRoutes.js';
 import { globalErrorHandler } from './controllers/errorController.js';
 import initSocket from './socket/index.js';
 import http from 'http';
@@ -30,6 +32,8 @@ app.use('/api/v1/employee', employeeRouter);
 app.use('/api/v1/attendance', attendanceRouter);
 app.use('/api/v1/leaves', leaveRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/activity', activityRouter);
+app.use('/api/v1/settings', settingsRouter);
 
 // Basic route
 app.get('/', (req, res) => {

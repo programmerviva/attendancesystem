@@ -83,6 +83,87 @@ export const getPendingLeaveRequests = async (req, res, next) => {
   }
 };
 
+// Get all approved leave requests (admin only)
+export const getApprovedLeaveRequests = async (req, res, next) => {
+  try {
+    // Check if user is admin or subadmin
+    if (req.user.role !== 'admin' && req.user.role !== 'subadmin') {
+      return next(new AppError('You do not have permission to perform this action', 403));
+    }
+    
+    const approvedLeaves = await Leave.find({ status: 'approved' })
+      .populate({
+        path: 'user',
+        select: 'fullName email department designation'
+      })
+      .sort({ startDate: 1 });
+    
+    res.status(200).json({
+      status: 'success',
+      results: approvedLeaves.length,
+      data: {
+        leaves: approvedLeaves
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Get all rejected leave requests (admin only)
+export const getRejectedLeaveRequests = async (req, res, next) => {
+  try {
+    // Check if user is admin or subadmin
+    if (req.user.role !== 'admin' && req.user.role !== 'subadmin') {
+      return next(new AppError('You do not have permission to perform this action', 403));
+    }
+    
+    const rejectedLeaves = await Leave.find({ status: 'rejected' })
+      .populate({
+        path: 'user',
+        select: 'fullName email department designation'
+      })
+      .sort({ startDate: 1 });
+    
+    res.status(200).json({
+      status: 'success',
+      results: rejectedLeaves.length,
+      data: {
+        leaves: rejectedLeaves
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Get all leave requests (admin only)
+export const getAllLeaveRequests = async (req, res, next) => {
+  try {
+    // Check if user is admin or subadmin
+    if (req.user.role !== 'admin' && req.user.role !== 'subadmin') {
+      return next(new AppError('You do not have permission to perform this action', 403));
+    }
+    
+    const allLeaves = await Leave.find()
+      .populate({
+        path: 'user',
+        select: 'fullName email department designation'
+      })
+      .sort({ createdAt: -1 });
+    
+    res.status(200).json({
+      status: 'success',
+      results: allLeaves.length,
+      data: {
+        leaves: allLeaves
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Update leave request status (admin only)
 export const updateLeaveStatus = async (req, res, next) => {
   try {

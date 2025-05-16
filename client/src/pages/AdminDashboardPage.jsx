@@ -5,19 +5,39 @@ import Dashboard from '../components/Admin/Dashboard';
 import Reports from '../components/Admin/Reports';
 import Settings from '../components/Admin/Settings';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 function AdminDashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Check if user is logged in
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      window.location.href = '/login';
+      navigate('/login');
+      return;
     }
-  }, []);
+
+    // Check for URL query parameters
+    const queryParams = new URLSearchParams(location.search);
+    const tab = queryParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+
+    // Check for stored leave status
+    if (tab === 'leaves') {
+      const storedStatus = localStorage.getItem('selectedLeaveStatus');
+      if (storedStatus) {
+        // Clear it after use
+        localStorage.removeItem('selectedLeaveStatus');
+      }
+    }
+  }, [location, navigate]);
 
   // Render the active component based on the selected tab
   const renderActiveComponent = () => {

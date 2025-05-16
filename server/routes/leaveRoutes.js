@@ -3,7 +3,10 @@ import {
   createLeaveRequest, 
   getMyLeaveRequests, 
   getPendingLeaveRequests, 
-  updateLeaveStatus 
+  updateLeaveStatus,
+  getApprovedLeaveRequests,
+  getRejectedLeaveRequests,
+  getAllLeaveRequests
 } from '../controllers/leaveController.js';
 import { protect, restrictTo } from '../controllers/authController.js';
 
@@ -18,6 +21,9 @@ router.get('/', getMyLeaveRequests);
 
 // Admin routes
 router.get('/pending', restrictTo('admin', 'subadmin'), getPendingLeaveRequests);
+router.get('/approved', restrictTo('admin', 'subadmin'), getApprovedLeaveRequests);
+router.get('/rejected', restrictTo('admin', 'subadmin'), getRejectedLeaveRequests);
+router.get('/all', restrictTo('admin', 'subadmin'), getAllLeaveRequests);
 router.patch('/:id', restrictTo('admin', 'subadmin'), updateLeaveStatus);
 
 export default router;

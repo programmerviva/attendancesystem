@@ -1,30 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLocation } from '../../hooks/useLocation';
-import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 
-// Office fixed coordinates (सही करें)
-const OFFICE_LAT = 28.4067738; // नया latitude
-const OFFICE_LON = 77.0414672; // नया longitude
-const ALLOWED_RADIUS_METERS = 150; // 150 मीटर के दायरे को बदलें यदि जरूरी हो
+// Office coordinates
+const OFFICE_LAT = 28.4067738;
+const OFFICE_LON = 77.0414672;
+const ALLOWED_RADIUS_METERS = 150;
 
 function AttendanceForm() {
   const [location, locationError, address] = useLocation();
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const { user, token } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [todayAttendance, setTodayAttendance] = useState(null);
   const navigate = useNavigate();
 
-  const checkInTimeLimit = dayjs().set('hour', 10).set('minute', 30);
-  const checkOutTimeLimit = dayjs().set('hour', 18).set('minute', 0);
+  // Get token from localStorage
+  const token = localStorage.getItem('token');
+  const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
 
   useEffect(() => {
-    if (!user) {
+    if (!token || !user) {
       navigate('/login');
+      return;
     }
-  }, [user, navigate]);
+
+    // Fetch today's attendance record
+    const fetchTodayAttendance = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/v1/attendance/today', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setTodayAttendance(response.data.data.attendance);
+      } catch (err) {
+        console.error('Error fetching today\'s attendance:', err);
+      }
+    };
+
+    fetchTodayAttendance();
+  }, [token, user, navigate]);
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371e3; // Earth radius in meters
@@ -42,54 +58,49 @@ function AttendanceForm() {
     
     return R * c; // in meters
   };
+
   const handleAttendance = async (type) => {
     setError(null);
     setSuccess(null);
+    setLoading(true);
 
     if (locationError) {
       setError('Could not retrieve location: ' + locationError);
+      setLoading(false);
       return;
     }
 
     if (!location) {
       setError('Location is required to mark attendance.');
+      setLoading(false);
       return;
     }
 
     if (location.accuracy && location.accuracy > 150) {
       setError(`Location is not accurate enough (Accuracy: ${Math.round(location.accuracy)}m). Must be within 150 meters.`);
+      setLoading(false);
       return;
     }
 
-    // नया डिस्टेंस कैलकुलेशन
-  const distanceFromOffice = calculateDistance(
-    location.latitude,
-    location.longitude,
-    OFFICE_LAT, // अपडेटेड coordinates
-    OFFICE_LON  // अपडेटेड coordinates
-  );
+    const distanceFromOffice = calculateDistance(
+      location.latitude,
+      location.longitude,
+      OFFICE_LAT,
+      OFFICE_LON
+    );
 
-    // नई वैलिडेशन कंडीशन
+    // For testing purposes, comment out this validation in development
     if (distanceFromOffice > ALLOWED_RADIUS_METERS) {
-      setError(`आप ऑफिस के ${ALLOWED_RADIUS_METERS} मीटर के दायरे में नहीं हैं। वर्तमान दूरी: ${Math.round(distanceFromOffice)} मीटर`);
+      setError(`You are not within ${ALLOWED_RADIUS_METERS} meters of the office. Current distance: ${Math.round(distanceFromOffice)} meters`);
+      setLoading(false);
       return;
     }
 
     const now = dayjs();
 
-    if (type === 'checkin' && now.isAfter(checkInTimeLimit)) {
-      setError('You are late for check-in.');
-      return;
-    }
-
-    if (type === 'checkout' && now.isBefore(checkOutTimeLimit)) {
-      setError('You cannot check out before 6:00 PM.');
-      return;
-    }
-
     try {
       const response = await axios.post(
-        '/api/v1/attendance',
+        'http://localhost:5000/api/v1/attendance',
         {
           type,
           latitude: location.latitude,
@@ -106,63 +117,150 @@ function AttendanceForm() {
 
       setSuccess(`Attendance ${type === 'checkin' ? 'Check-In' : 'Check-Out'} marked successfully!`);
       console.log('Attendance marked:', response.data);
+      
+      // Update today's attendance
+      setTodayAttendance(response.data.data.attendance);
     } catch (err) {
       setError(err.response?.data?.message || 'Could not mark attendance.');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const formatTime = (dateString) => {
+    if (!dateString) return '';
+    return dayjs(dateString).format('hh:mm A');
+  };
+
   return (
-    <div className="bg-white shadow-2xl rounded-lg p-8 max-w-md w-full mx-auto mt-10">
-  <h2 className="text-3xl font-extrabold text-center text-gray-800 mb-6">Mark Attendance</h2>
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="bg-white shadow-xl rounded-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4">
+          <h2 className="text-2xl font-bold text-white">Attendance System</h2>
+          <p className="text-blue-100">Mark your daily attendance</p>
+        </div>
 
-  {error && <p className="text-red-600 text-sm mb-4 font-semibold">{error}</p>}
-  {success && <p className="text-green-600 text-sm mb-4 font-semibold">{success}</p>}
+        <div className="p-6">
+          {/* Status Messages */}
+          {error && (
+            <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
-  {location ? (
-    <div className="text-gray-700 mb-4 text-sm">
-      📍 <strong>Latitude:</strong> {location.latitude.toFixed(7)}, <strong>Longitude:</strong> {location.longitude.toFixed(7)}<br />
-      🎯 <strong>Accuracy:</strong> {Math.round(location.accuracy)} meters<br />
-      🏠 <strong>Address:</strong> {address || 'Fetching address...'}<br />
-      📏 <strong>Distance from Office:</strong> {Math.round(calculateDistance(location.latitude, location.longitude, OFFICE_LAT, OFFICE_LON))} meters
+          {success && (
+            <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-green-700">{success}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Today's Attendance Status */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Today's Attendance</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-500">Check-In Time</p>
+                <p className="text-lg font-semibold">
+                  {todayAttendance?.checkIn?.time ? formatTime(todayAttendance.checkIn.time) : 'Not checked in yet'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Check-Out Time</p>
+                <p className="text-lg font-semibold">
+                  {todayAttendance?.checkOut?.time ? formatTime(todayAttendance.checkOut.time) : 'Not checked out yet'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Location Information */}
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+            <h3 className="text-lg font-medium text-blue-900 mb-2">Location Information</h3>
+            {location ? (
+              <div className="space-y-2">
+                <p className="text-sm">
+                  <span className="font-medium">Coordinates:</span> {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium">Accuracy:</span> {Math.round(location.accuracy)} meters
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium">Address:</span> {address || 'Fetching address...'}
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium">Distance from Office:</span> {Math.round(calculateDistance(location.latitude, location.longitude, OFFICE_LAT, OFFICE_LON))} meters
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-blue-700">Getting your location...</p>
+            )}
+          </div>
+
+          {/* Attendance Actions */}
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => handleAttendance('checkin')}
+              disabled={loading || (todayAttendance?.checkIn?.time !== undefined)}
+              className={`py-3 px-4 rounded-lg font-medium flex items-center justify-center
+                ${loading || (todayAttendance?.checkIn?.time !== undefined)
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-green-600 text-white hover:bg-green-700'}`}
+            >
+              {loading ? (
+                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <svg className="mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                </svg>
+              )}
+              {todayAttendance?.checkIn?.time !== undefined ? 'Already Checked In' : 'Check In'}
+            </button>
+            
+            <button
+              onClick={() => handleAttendance('checkout')}
+              disabled={loading || !todayAttendance?.checkIn?.time || todayAttendance?.checkOut?.time !== undefined}
+              className={`py-3 px-4 rounded-lg font-medium flex items-center justify-center
+                ${loading || !todayAttendance?.checkIn?.time || todayAttendance?.checkOut?.time !== undefined
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-red-600 text-white hover:bg-red-700'}`}
+            >
+              {loading ? (
+                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <svg className="mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              )}
+              {todayAttendance?.checkOut?.time !== undefined ? 'Already Checked Out' : 'Check Out'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-  ) : (
-    <p className="text-gray-500 mb-4 text-sm">📍 Getting location...</p>
-  )}
-
-  <div className="flex gap-4">
-    <button
-      type="button"
-      onClick={() => handleAttendance('checkin')}
-      disabled={
-        !location || 
-        location.accuracy > 150 || 
-        calculateDistance(location.latitude, location.longitude, OFFICE_LAT, OFFICE_LON) > ALLOWED_RADIUS_METERS
-      }
-      className={`w-1/2 py-3 rounded-lg text-white font-semibold transition duration-300 
-        ${(location && location.accuracy <= 150 && calculateDistance(location.latitude, location.longitude, OFFICE_LAT, OFFICE_LON) <= ALLOWED_RADIUS_METERS)
-          ? 'bg-green-600 hover:bg-green-700'
-          : 'bg-gray-400 cursor-not-allowed'}`}
-    >
-      Check In
-    </button>
-
-    <button
-      type="button"
-      onClick={() => handleAttendance('checkout')}
-      disabled={
-        !location || 
-        location.accuracy > 150 || 
-        calculateDistance(location.latitude, location.longitude, OFFICE_LAT, OFFICE_LON) > ALLOWED_RADIUS_METERS
-      }
-      className={`w-1/2 py-3 rounded-lg text-white font-semibold transition duration-300 
-        ${(location && location.accuracy <= 150 && calculateDistance(location.latitude, location.longitude, OFFICE_LAT, OFFICE_LON) <= ALLOWED_RADIUS_METERS)
-          ? 'bg-red-600 hover:bg-red-700'
-          : 'bg-gray-400 cursor-not-allowed'}`}
-    >
-      Check Out
-    </button>
-  </div>
-</div>
   );
 }
 
