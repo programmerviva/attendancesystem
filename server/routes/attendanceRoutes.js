@@ -1,10 +1,11 @@
 import express from 'express';
 import { 
-  markAttendance, 
-  getAttendanceHistory, 
-  getTodayAttendance,
-  getAttendanceSummary,
-  getAllAttendance
+  createAttendance, 
+  getTodayAttendance, 
+  getAttendanceHistory,
+  getEmployeeAttendance,
+  getAllAttendance,
+  getCompOffDates
 } from '../controllers/attendanceController.js';
 import { protect, restrictTo } from '../controllers/authController.js';
 
@@ -14,12 +15,13 @@ const router = express.Router();
 router.use(protect);
 
 // Employee routes
-router.post('/', markAttendance);
-router.get('/history', getAttendanceHistory);
+router.post('/', createAttendance);
 router.get('/today', getTodayAttendance);
+router.get('/history', getAttendanceHistory);
+router.get('/compoff-dates', getCompOffDates);
 
 // Admin routes
-router.get('/summary', restrictTo('admin', 'subadmin'), getAttendanceSummary);
+router.get('/employee/:employeeId', restrictTo('admin', 'subadmin'), getEmployeeAttendance);
 router.get('/all', restrictTo('admin', 'subadmin'), getAllAttendance);
 
 export default router;

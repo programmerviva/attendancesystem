@@ -6,7 +6,9 @@ import {
   updateLeaveStatus,
   getApprovedLeaveRequests,
   getRejectedLeaveRequests,
-  getAllLeaveRequests
+  getAllLeaveRequests,
+  getLeaveBalance,
+  getCompOffDates
 } from '../controllers/leaveController.js';
 import { protect, restrictTo } from '../controllers/authController.js';
 
@@ -18,6 +20,8 @@ router.use(protect);
 // Employee routes
 router.post('/', createLeaveRequest);
 router.get('/', getMyLeaveRequests);
+router.get('/balance', getLeaveBalance);
+router.get('/compoff-dates', getCompOffDates);
 
 // Admin routes
 router.get('/pending', restrictTo('admin', 'subadmin'), getPendingLeaveRequests);

@@ -1,11 +1,12 @@
 import Leave from '../models/Leave.js';
 import User from '../models/User.js';
 import AppError from '../utils/appError.js';
+import dayjs from 'dayjs';
 
 // Create a new leave request
 export const createLeaveRequest = async (req, res, next) => {
   try {
-    const { leaveType, startDate, endDate, reason } = req.body;
+    const { leaveType, startDate, endDate, reason, compOffDate } = req.body;
     const userId = req.user._id;
     
     // Validate dates
@@ -16,13 +17,34 @@ export const createLeaveRequest = async (req, res, next) => {
       return next(new AppError('Start date cannot be after end date', 400));
     }
     
+    // For comp off, validate that the comp off date exists and is not used
+    if (leaveType === 'comp') {
+      if (!compOffDate) {
+        return next(new AppError('Comp off date is required for comp off leave', 400));
+      }
+      
+      const user = await User.findById(userId);
+      const compOffEntry = user.compOffDates.find(
+        entry => entry.date.toISOString().split('T')[0] === compOffDate && !entry.used
+      );
+      
+      if (!compOffEntry) {
+        return next(new AppError('Invalid or already used comp off date', 400));
+      }
+      
+      // Mark the comp off date as used
+      compOffEntry.used = true;
+      await user.save();
+    }
+    
     // Create leave request
     const leaveRequest = await Leave.create({
       user: userId,
       leaveType,
       startDate,
       endDate,
-      reason
+      reason,
+      compOffDate: leaveType === 'comp' ? compOffDate : undefined
     });
     
     res.status(201).json({
@@ -49,6 +71,84 @@ export const getMyLeaveRequests = async (req, res, next) => {
       results: leaveRequests.length,
       data: {
         leaves: leaveRequests
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Get leave balance for the current user
+export const getLeaveBalance = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const { startDate, endDate } = req.query;
+    
+    // Get user's leave balance
+    const user = await User.findById(userId);
+    
+    // Calculate financial year if not provided
+    let financialYearStart, financialYearEnd;
+    if (!startDate || !endDate) {
+      const today = dayjs();
+      const month = today.month();
+      const year = today.year();
+      
+      if (month < 3) { // Before April
+        financialYearStart = `${year-1}-04-01`;
+        financialYearEnd = `${year}-03-31`;
+      } else {
+        financialYearStart = `${year}-04-01`;
+        financialYearEnd = `${year+1}-03-31`;
+      }
+    } else {
+      financialYearStart = startDate;
+      financialYearEnd = endDate;
+    }
+    
+    // Count unused comp off dates
+    const unusedCompOffDates = user.compOffDates.filter(entry => !entry.used).length;
+    
+    // Calculate leave balance
+    const leaveBalance = {
+      sick: user.leaveBalance.sick,
+      vacation: user.leaveBalance.vacation,
+      short: user.leaveBalance.short,
+      comp: unusedCompOffDates
+    };
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        balance: leaveBalance,
+        financialYear: {
+          start: financialYearStart,
+          end: financialYearEnd
+        }
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Get comp off dates for the current user
+export const getCompOffDates = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    
+    // Get user's comp off dates
+    const user = await User.findById(userId);
+    
+    // Filter unused comp off dates
+    const unusedCompOffDates = user.compOffDates
+      .filter(entry => !entry.used)
+      .map(entry => entry.date.toISOString().split('T')[0]);
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        dates: unusedCompOffDates
       }
     });
   } catch (err) {
@@ -184,6 +284,19 @@ export const updateLeaveStatus = async (req, res, next) => {
     
     if (!leaveRequest) {
       return next(new AppError('Leave request not found', 404));
+    }
+    
+    // If rejecting a comp off leave that was previously approved, mark the comp off date as unused
+    if (status === 'rejected' && leaveRequest.status === 'approved' && leaveRequest.leaveType === 'comp' && leaveRequest.compOffDate) {
+      const user = await User.findById(leaveRequest.user);
+      const compOffEntry = user.compOffDates.find(
+        entry => entry.date.toISOString().split('T')[0] === leaveRequest.compOffDate && entry.used
+      );
+      
+      if (compOffEntry) {
+        compOffEntry.used = false;
+        await user.save();
+      }
     }
     
     // Update leave request

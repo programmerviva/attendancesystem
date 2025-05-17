@@ -8,7 +8,7 @@ const leaveSchema = new mongoose.Schema({
   },
   leaveType: {
     type: String,
-    enum: ['sick', 'vacation', 'personal', 'half', 'short', 'full'],
+    enum: ['sick', 'vacation', 'short', 'comp'],
     required: true
   },
   startDate: {
@@ -27,6 +27,12 @@ const leaveSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
+  },
+  compOffDate: {
+    type: String,
+    required: function() {
+      return this.leaveType === 'comp';
+    }
   },
   approvedBy: {
     type: mongoose.Schema.Types.ObjectId,

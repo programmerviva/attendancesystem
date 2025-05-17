@@ -16,12 +16,20 @@ function LeaveRequestStatus({ refreshTrigger }) {
   const fetchLeaveRequests = async () => {
     setLoading(true);
     try {
+      // For development, use mock data
+      // In production, uncomment the API call
+      /*
       const response = await axios.get('http://localhost:5000/api/v1/leaves', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       setLeaveRequests(response.data.data.leaves);
+      */
+      
+      // Mock data for development
+      const mockLeaves = JSON.parse(localStorage.getItem('mockLeaves') || '[]');
+      setLeaveRequests(mockLeaves);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch leave requests');

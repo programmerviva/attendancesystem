@@ -16,7 +16,16 @@ function LeavePage() {
     return null;
   }
 
-  const handleLeaveSubmitted = () => {
+  const handleLeaveSubmitted = (leaveData) => {
+    // For development, store the leave request in localStorage
+    const mockLeaves = JSON.parse(localStorage.getItem('mockLeaves') || '[]');
+    mockLeaves.push({
+      ...leaveData,
+      _id: 'mock-' + Date.now(),
+      createdAt: new Date().toISOString()
+    });
+    localStorage.setItem('mockLeaves', JSON.stringify(mockLeaves));
+    
     // Trigger a refresh of the leave request status component
     setRefreshTrigger(prev => prev + 1);
   };
