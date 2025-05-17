@@ -11,29 +11,36 @@ function LeaveRequestStatus({ refreshTrigger }) {
 
   useEffect(() => {
     fetchLeaveRequests();
+    
+    // Set up polling to check for updates every 10 seconds
+    const intervalId = setInterval(fetchLeaveRequests, 10000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId);
   }, [refreshTrigger]);
 
   const fetchLeaveRequests = async () => {
     setLoading(true);
     try {
-      // For development, use mock data
-      // In production, uncomment the API call
-      /*
+      // Use the real API endpoint to get the latest data
       const response = await axios.get('http://localhost:5000/api/v1/leaves', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setLeaveRequests(response.data.data.leaves);
-      */
       
-      // Mock data for development
-      const mockLeaves = JSON.parse(localStorage.getItem('mockLeaves') || '[]');
-      setLeaveRequests(mockLeaves);
+      setLeaveRequests(response.data.data.leaves || []);
       setError(null);
+      
+      // Also update the mock data in localStorage for backup
+      localStorage.setItem('mockLeaves', JSON.stringify(response.data.data.leaves || []));
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch leave requests');
       console.error('Error fetching leave requests:', err);
+      
+      // Fallback to mock data if API fails
+      const mockLeaves = JSON.parse(localStorage.getItem('mockLeaves') || '[]');
+      setLeaveRequests(mockLeaves);
     } finally {
       setLoading(false);
     }

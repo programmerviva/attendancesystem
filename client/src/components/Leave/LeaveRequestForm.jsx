@@ -19,8 +19,6 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
   });
   const [compOffDates, setCompOffDates] = useState([]);
   const [selectedCompOffDate, setSelectedCompOffDate] = useState(null);
-  const [showCompOffCalendar, setShowCompOffCalendar] = useState(false);
-  const [useCompOff, setUseCompOff] = useState(false);
 
   const token = localStorage.getItem('token');
 
@@ -48,21 +46,13 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
   const financialYear = getCurrentFinancialYear();
 
   useEffect(() => {
+    // Fetch real data from the server
     fetchLeaveBalance();
+    fetchCompOffDates();
   }, []);
 
   const fetchLeaveBalance = async () => {
     try {
-      // डेवलपमेंट के लिए डमी डेटा
-      setLeaveBalance({
-        sick: 12,
-        comp: 3,
-        short: 6,
-        vacation: 15
-      });
-      
-      // बाद में इसे अनकमेंट करें
-      /*
       const response = await axios.get('http://localhost:5000/api/v1/leaves/balance', {
         headers: { Authorization: `Bearer ${token}` },
         params: { 
@@ -77,7 +67,6 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
         short: 0,
         vacation: 0
       });
-      */
     } catch (err) {
       console.error('Error fetching leave balance:', err);
     }
@@ -86,27 +75,7 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
   const handleLeaveTypeChange = (type) => {
     setLeaveType(type);
     setDropdownOpen(false);
-    
-    if (type === 'comp') {
-      // डेवलपमेंट के लिए डमी डेटा
-      setCompOffDates([
-        '2024-05-12',
-        '2024-05-19',
-        '2024-05-26'
-      ]);
-      setShowCompOffCalendar(true);
-      setUseCompOff(true);
-      
-      // बाद में इसे अनकमेंट करें
-      /*
-      fetchCompOffDates();
-      */
-    } else {
-      if (!useCompOff) {
-        setShowCompOffCalendar(false);
-        setSelectedCompOffDate(null);
-      }
-    }
+    setSelectedCompOffDate(null);
   };
 
   const fetchCompOffDates = async () => {
@@ -120,9 +89,9 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
       });
       
       setCompOffDates(response.data.data.dates || []);
-      setShowCompOffCalendar(true);
     } catch (err) {
       console.error('Error fetching comp off dates:', err);
+      setError('Failed to fetch comp off dates. Please try again later.');
     }
   };
 
@@ -149,13 +118,6 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
       return;
     }
 
-    // For comp off or when using comp off with other leave types, validate that a comp off date is selected
-    if ((leaveType === 'comp' || useCompOff) && !selectedCompOffDate) {
-      setError('Please select a comp off date to use');
-      setLoading(false);
-      return;
-    }
-
     try {
       const payload = {
         leaveType,
@@ -164,46 +126,13 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
         reason
       };
 
-      // Add comp off date if applicable (for comp off leave type or when using comp off with other leave types)
-      if (leaveType === 'comp' || useCompOff) {
+      // Add comp off date if selected
+      if (selectedCompOffDate) {
         payload.compOffDate = selectedCompOffDate;
         payload.useCompOff = true;
       }
 
-      // For development, just simulate a successful response
-      setTimeout(() => {
-        setSuccess('Leave request submitted successfully!');
-        
-        // Reset form
-        setLeaveType('sick');
-        setStartDate(dayjs().add(1, 'day').format('YYYY-MM-DD'));
-        setEndDate(dayjs().add(1, 'day').format('YYYY-MM-DD'));
-        setReason('');
-        setSelectedCompOffDate(null);
-        setShowCompOffCalendar(false);
-        setUseCompOff(false);
-        
-        // Notify parent component about the new leave request
-        if (onLeaveSubmitted) {
-          // Create a mock leave object to pass to the parent
-          const mockLeave = {
-            id: 'temp-' + Date.now(),
-            leaveType,
-            startDate,
-            endDate,
-            reason,
-            status: 'pending',
-            compOffDate: selectedCompOffDate,
-            useCompOff: leaveType === 'comp' || useCompOff
-          };
-          onLeaveSubmitted(mockLeave);
-        }
-        
-        setLoading(false);
-      }, 1000);
-
-      // In production, use this code instead:
-      /*
+      // Send the request to the server
       const response = await axios.post(
         'http://localhost:5000/api/v1/leaves',
         payload,
@@ -222,7 +151,6 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
       setEndDate(dayjs().add(1, 'day').format('YYYY-MM-DD'));
       setReason('');
       setSelectedCompOffDate(null);
-      setShowCompOffCalendar(false);
       
       // Refresh leave balance
       fetchLeaveBalance();
@@ -231,7 +159,6 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
       if (onLeaveSubmitted) {
         onLeaveSubmitted(response.data.data.leave);
       }
-      */
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to submit leave request');
       setLoading(false);
@@ -335,64 +262,57 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
           </div>
         </div>
 
-        {/* Use Comp Off Option */}
-        {leaveType !== 'comp' && leaveBalance.comp > 0 && (
-          <div className="flex items-center">
-            <input
-              id="useCompOff"
-              type="checkbox"
-              checked={useCompOff}
-              onChange={(e) => {
-                setUseCompOff(e.target.checked);
-                if (e.target.checked) {
-                  // Load comp off dates
-                  setCompOffDates([
-                    '2024-05-12',
-                    '2024-05-19',
-                    '2024-05-26'
-                  ]);
-                  setShowCompOffCalendar(true);
-                } else {
-                  setShowCompOffCalendar(false);
-                  setSelectedCompOffDate(null);
-                }
-              }}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="useCompOff" className="ml-2 block text-sm text-gray-700">
-              Use comp off days instead of regular leave balance
-            </label>
-          </div>
-        )}
-
-        {/* Comp Off Calendar - Show when comp off is selected or useCompOff is true */}
-        {showCompOffCalendar && (
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Select Comp Off Date to Use</h3>
-            {compOffDates.length === 0 ? (
-              <p className="text-sm text-red-600">No comp off days available. You need to work on a weekend first.</p>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {compOffDates.map(date => (
-                  <div 
-                    key={date} 
-                    className={`p-2 border rounded-md cursor-pointer text-center ${
-                      selectedCompOffDate === date 
-                        ? 'bg-blue-100 border-blue-500' 
-                        : 'hover:bg-gray-50'
-                    }`}
-                    onClick={() => setSelectedCompOffDate(date)}
-                  >
-                    <div className="text-xs font-medium">{formatDate(date)}</div>
-                    <div className="text-xs text-gray-500">
-                      {isWeekend(date) ? 'Weekend' : 'Weekday'}
-                    </div>
+        {/* Comp Off Calendar - Always show for all leave types */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">
+            {leaveType === 'comp' ? 'Select Comp Off Date to Use (Required)' : 'Select Comp Off Date to Use (Optional)'}
+          </h3>
+          <p className="text-xs text-blue-600 mb-3">
+            {leaveType === 'comp' 
+              ? 'You must select a comp off date to submit this request.' 
+              : 'If you select a comp off date, your salary will not be deducted for this leave.'}
+          </p>
+          
+          {compOffDates.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {compOffDates.map(date => (
+                <div 
+                  key={date} 
+                  className={`p-2 border rounded-md cursor-pointer text-center ${
+                    selectedCompOffDate === date 
+                      ? 'bg-blue-100 border-blue-500' 
+                      : 'hover:bg-gray-50'
+                  }`}
+                  onClick={() => setSelectedCompOffDate(date === selectedCompOffDate ? null : date)}
+                >
+                  <div className="text-xs font-medium">{formatDate(date)}</div>
+                  <div className="text-xs text-gray-500">
+                    {isWeekend(date) ? 'Weekend' : 'Weekday'}
                   </div>
-                ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-yellow-50 p-4 rounded-md border border-yellow-200">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-yellow-800">No Comp Off Dates Available</h3>
+                  <div className="mt-2 text-sm text-yellow-700">
+                    <p>You don't have any comp off dates available. To earn comp off days, you need to work on weekends or holidays.</p>
+                    {leaveType === 'comp' && (
+                      <p className="mt-1 font-medium">You cannot submit a Comp Off leave request without available comp off days.</p>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
         {/* Date Fields */}
         <div className="grid md:grid-cols-2 gap-6">
@@ -440,7 +360,7 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
         <div>
           <button
             type="submit"
-            disabled={loading || ((leaveType === 'comp' || useCompOff) && !selectedCompOffDate)}
+            disabled={loading || (leaveType === 'comp' && (!selectedCompOffDate || compOffDates.length === 0))}
             className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
