@@ -36,6 +36,36 @@ const settingsSchema = new mongoose.Schema({
       type: Number,
       default: 6
     }
+  },
+  // New fields for company holidays
+  companyHolidays: [{
+    date: {
+      type: Date,
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
+    },
+    description: String
+  }],
+  // New fields for attendance policy
+  attendancePolicy: {
+    lateThreshold: {
+      type: Number,
+      default: 30, // minutes
+      min: 1
+    },
+    halfDayThreshold: {
+      type: Number,
+      default: 240, // minutes (4 hours)
+      min: 1
+    },
+    earlyLeaveThreshold: {
+      type: Number,
+      default: 30, // minutes
+      min: 1
+    }
   }
 }, { timestamps: true });
 

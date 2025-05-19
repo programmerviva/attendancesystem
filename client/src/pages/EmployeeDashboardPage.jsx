@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import EmployeeHolidayCalendar from '../components/EmployeeHolidayCalendar';
 
 function EmployeeDashboardPage() {
   const [user, setUser] = useState(null);
@@ -19,6 +20,7 @@ function EmployeeDashboardPage() {
   const [currentYear, setCurrentYear] = useState(dayjs().year());
   const [monthlyAttendance, setMonthlyAttendance] = useState([]);
   const [calendarLoading, setCalendarLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('attendance');
 
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
@@ -265,7 +267,7 @@ function EmployeeDashboardPage() {
       </header>
       
       <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Attendance Card */}
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
@@ -304,44 +306,6 @@ function EmployeeDashboardPage() {
             </div>
           </div>
           
-          {/* Leave Card */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg font-medium text-gray-900">Leave Management</h3>
-              <div className="mt-5">
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm text-gray-500">Recent Requests</span>
-                  <span className="text-sm font-medium text-blue-600">{recentLeaves.length} requests</span>
-                </div>
-                {recentLeaves.length > 0 ? (
-                  <div className="space-y-2">
-                    {recentLeaves.slice(0, 2).map(leave => (
-                      <div key={leave._id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                        <div>
-                          <p className="text-sm font-medium">{formatDate(leave.startDate)}</p>
-                          <p className="text-xs text-gray-500">{leave.leaveType} leave</p>
-                        </div>
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(leave.status)}`}>
-                          {leave.status}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500 text-center py-2">No recent leave requests</p>
-                )}
-                <div className="mt-5">
-                  <button 
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium w-full"
-                    onClick={() => navigate('/leave')}
-                  >
-                    Request Leave
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          
           {/* Profile Card */}
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
@@ -351,6 +315,8 @@ function EmployeeDashboardPage() {
                 <p className="text-sm text-gray-600">Email: {user?.email}</p>
                 <p className="text-sm text-gray-600">Department: {user?.department}</p>
                 <p className="text-sm text-gray-600">Designation: {user?.designation}</p>
+                <p className="text-sm text-gray-600">Employee ID: {user?.empId || 'Not assigned'}</p>
+                <p className="text-sm text-gray-600">Joining Date: {user?.joiningDate ? formatDate(user.joiningDate) : 'Not available'}</p>
               </div>
               <div className="mt-5">
                 <button 
@@ -363,126 +329,159 @@ function EmployeeDashboardPage() {
           </div>
         </div>
 
-        {/* Monthly Summary with Calendar */}
-        <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
-          <div className="px-4 py-5 sm:px-6 bg-gradient-to-r from-blue-500 to-blue-600">
-            <h3 className="text-lg leading-6 font-medium text-white">Monthly Attendance Summary</h3>
-          </div>
-          <div className="px-4 py-5 sm:p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Left Column - Monthly Summary */}
-              <div className="space-y-4">
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Present Days</p>
-                  <p className="text-2xl font-bold text-green-600">{attendanceSummary.present || 0}</p>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.present || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
-                  </div>
-                </div>
-                
-                <div className="bg-red-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Absent Days</p>
-                  <p className="text-2xl font-bold text-red-600">{attendanceSummary.absent || 0}</p>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                    <div className="bg-red-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.absent || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
-                  </div>
-                </div>
-                
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Late Days</p>
-                  <p className="text-2xl font-bold text-blue-600">{attendanceSummary.late || 0}</p>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.late || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
-                  </div>
-                </div>
-                
-                <div className="bg-yellow-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Half Days</p>
-                  <p className="text-2xl font-bold text-yellow-600">{attendanceSummary.halfDay || 0}</p>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                    <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.halfDay || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Working Days</p>
-                  <p className="text-2xl font-bold text-gray-600">{attendanceSummary.workingDays || 0}</p>
-                </div>
-              </div>
-              
-              {/* Right Column - Calendar */}
-              <div className="md:col-span-2">
-                {/* Month Navigation */}
-                <div className="flex justify-between items-center mb-4">
-                  <button 
-                    onClick={previousMonth}
-                    className="p-2 rounded-full hover:bg-gray-200"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  <h3 className="text-lg font-medium">{monthNames[currentMonth]} {currentYear}</h3>
-                  <button 
-                    onClick={nextMonth}
-                    className="p-2 rounded-full hover:bg-gray-200"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
+        {/* Tabs */}
+        <div className="mb-6 border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('attendance')}
+              className={`${
+                activeTab === 'attendance'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Attendance Calendar
+            </button>
+            <button
+              onClick={() => setActiveTab('holidays')}
+              className={`${
+                activeTab === 'holidays'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Company Holidays
+            </button>
+          </nav>
+        </div>
 
-                {/* Calendar Legend */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <div className="flex items-center">
-                    <div className="w-4 h-4 bg-green-200 mr-1"></div>
-                    <span className="text-xs">Present</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-4 h-4 bg-blue-200 mr-1"></div>
-                    <span className="text-xs">Late</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-4 h-4 bg-yellow-200 mr-1"></div>
-                    <span className="text-xs">Half Day</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-4 h-4 bg-red-200 mr-1"></div>
-                    <span className="text-xs">Absent</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-4 h-4 bg-gray-200 mr-1"></div>
-                    <span className="text-xs">Weekend</span>
-                  </div>
-                </div>
-
-                {/* Calendar */}
-                {calendarLoading ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                  </div>
-                ) : (
-                  <div>
-                    {/* Day headers */}
-                    <div className="grid grid-cols-7 gap-1 mb-1">
-                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                        <div key={day} className="text-center font-medium text-sm py-2 bg-gray-100">
-                          {day}
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* Calendar grid */}
-                    <div className="grid grid-cols-7 gap-1">
-                      {renderCalendar()}
+        {/* Attendance Calendar Tab */}
+        {activeTab === 'attendance' && (
+          <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
+            <div className="px-4 py-5 sm:px-6 bg-gradient-to-r from-blue-500 to-blue-600">
+              <h3 className="text-lg leading-6 font-medium text-white">Monthly Attendance Summary</h3>
+            </div>
+            <div className="px-4 py-5 sm:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Left Column - Monthly Summary */}
+                <div className="space-y-4">
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Present Days</p>
+                    <p className="text-2xl font-bold text-green-600">{attendanceSummary.present || 0}</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.present || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
                     </div>
                   </div>
-                )}
+                  
+                  <div className="bg-red-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Absent Days</p>
+                    <p className="text-2xl font-bold text-red-600">{attendanceSummary.absent || 0}</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="bg-red-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.absent || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Late Days</p>
+                    <p className="text-2xl font-bold text-blue-600">{attendanceSummary.late || 0}</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.late || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Half Days</p>
+                    <p className="text-2xl font-bold text-yellow-600">{attendanceSummary.halfDay || 0}</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.halfDay || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Working Days</p>
+                    <p className="text-2xl font-bold text-gray-600">{attendanceSummary.workingDays || 0}</p>
+                  </div>
+                </div>
+                
+                {/* Right Column - Calendar */}
+                <div className="md:col-span-2">
+                  {/* Month Navigation */}
+                  <div className="flex justify-between items-center mb-4">
+                    <button 
+                      onClick={previousMonth}
+                      className="p-2 rounded-full hover:bg-gray-200"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    <h3 className="text-lg font-medium">{monthNames[currentMonth]} {currentYear}</h3>
+                    <button 
+                      onClick={nextMonth}
+                      className="p-2 rounded-full hover:bg-gray-200"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* Calendar Legend */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-green-200 mr-1"></div>
+                      <span className="text-xs">Present</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-blue-200 mr-1"></div>
+                      <span className="text-xs">Late</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-yellow-200 mr-1"></div>
+                      <span className="text-xs">Half Day</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-red-200 mr-1"></div>
+                      <span className="text-xs">Absent</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-gray-200 mr-1"></div>
+                      <span className="text-xs">Weekend</span>
+                    </div>
+                  </div>
+
+                  {/* Calendar */}
+                  {calendarLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                  ) : (
+                    <div>
+                      {/* Day headers */}
+                      <div className="grid grid-cols-7 gap-1 mb-1">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                          <div key={day} className="text-center font-medium text-sm py-2 bg-gray-100">
+                            {day}
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Calendar grid */}
+                      <div className="grid grid-cols-7 gap-1">
+                        {renderCalendar()}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Company Holidays Tab */}
+        {activeTab === 'holidays' && (
+          <EmployeeHolidayCalendar />
+        )}
 
         {/* Quick Actions */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
