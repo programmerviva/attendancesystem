@@ -315,12 +315,12 @@ function CustomReport() {
   return (
     <div>
       <div className="mb-6 bg-gray-50 p-4 rounded-lg">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">कस्टम रिपोर्ट फिल्टर</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Custom Report Filter</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           {/* Date Range Selection */}
           <div>
-            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">प्रारंभ तिथि</label>
+            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
             <input
               type="date"
               id="startDate"
@@ -330,7 +330,7 @@ function CustomReport() {
             />
           </div>
           <div>
-            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">अंतिम तिथि</label>
+            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
             <input
               type="date"
               id="endDate"
@@ -344,14 +344,14 @@ function CustomReport() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           {/* Department Filter */}
           <div>
-            <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">विभाग</label>
+            <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">Department</label>
             <select
               id="department"
               value={filters.department}
               onChange={(e) => setFilters({ ...filters, department: e.target.value })}
               className="border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 w-full"
             >
-              <option value="">सभी विभाग</option>
+              <option value="">All Departments</option>
               {departments.map((dept, index) => (
                 <option key={index} value={dept}>{dept}</option>
               ))}
@@ -360,14 +360,14 @@ function CustomReport() {
           
           {/* Employee Filter */}
           <div>
-            <label htmlFor="employee" className="block text-sm font-medium text-gray-700 mb-1">कर्मचारी</label>
+            <label htmlFor="employee" className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
             <select
               id="employee"
               value={filters.employee}
               onChange={(e) => setFilters({ ...filters, employee: e.target.value })}
               className="border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 w-full"
             >
-              <option value="">सभी कर्मचारी</option>
+              <option value="">All Employees</option>
               {employees
                 .filter(emp => !filters.department || emp.department === filters.department)
                 .map((emp) => (
@@ -380,20 +380,20 @@ function CustomReport() {
           
           {/* Status Filter */}
           <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">उपस्थिति स्थिति</label>
+            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Attendance Status</label>
             <select
               id="status"
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
               className="border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 w-full"
             >
-              <option value="">सभी स्थिति</option>
-              <option value="present">उपस्थित</option>
-              <option value="absent">अनुपस्थित</option>
-              <option value="late">देर से</option>
-              <option value="half-day">आधा दिन</option>
-              <option value="early-leave">जल्दी छुट्टी</option>
-              <option value="on-leave">छुट्टी पर</option>
+              <option value="">All Status</option>
+              <option value="present">Present</option>
+              <option value="absent">Absent</option>
+              <option value="late">Late</option>
+              <option value="half-day">Half Day</option>
+              <option value="early-leave">Early Leave</option>
+              <option value="on-leave">On Leave</option>
             </select>
           </div>
         </div>
@@ -404,7 +404,7 @@ function CustomReport() {
             disabled={loading}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition-colors"
           >
-            {loading ? 'जनरेट हो रहा है...' : 'रिपोर्ट जनरेट करें'}
+            {loading ? 'Generating...' : 'Generate Report'}
           </button>
         </div>
       </div>
@@ -435,7 +435,7 @@ function CustomReport() {
           {reportGenerated && reportData.length > 0 ? (
             <div>
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">रिपोर्ट परिणाम ({reportData.length} रिकॉर्ड्स)</h3>
+                <h3 className="text-lg font-medium text-gray-900">Report Results ({reportData.length} Records)</h3>
                 <button
                   onClick={exportToCSV}
                   className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition-colors flex items-center"
@@ -443,7 +443,7 @@ function CustomReport() {
                   <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
-                  CSV में निर्यात करें
+                  Export to CSV
                 </button>
               </div>
               
@@ -451,7 +451,7 @@ function CustomReport() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {statusChartData && (
                   <div className="bg-white p-4 rounded-lg shadow">
-                    <h4 className="text-md font-medium text-gray-900 mb-4">उपस्थिति स्थिति वितरण</h4>
+                    <h4 className="text-md font-medium text-gray-900 mb-4">Attendance Status Distribution</h4>
                     <div className="h-64">
                       <Pie 
                         data={statusChartData} 
@@ -471,7 +471,7 @@ function CustomReport() {
                 
                 {departmentChartData && departments.length > 1 && (
                   <div className="bg-white p-4 rounded-lg shadow">
-                    <h4 className="text-md font-medium text-gray-900 mb-4">विभाग-वार उपस्थिति</h4>
+                    <h4 className="text-md font-medium text-gray-900 mb-4">Department-wise Attendance</h4>
                     <div className="h-64">
                       <Bar 
                         data={departmentChartData}
@@ -502,8 +502,8 @@ function CustomReport() {
               <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">कोई रिकॉर्ड नहीं मिला</h3>
-              <p className="mt-1 text-sm text-gray-500">अधिक परिणाम देखने के लिए अपने फिल्टर समायोजित करें।</p>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No Records Found</h3>
+              <p className="mt-1 text-sm text-gray-500">Adjust your filters to see more results.</p>
             </div>
           ) : null}
         </>
