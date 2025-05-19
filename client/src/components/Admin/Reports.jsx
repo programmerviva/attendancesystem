@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import SimpleAttendanceCalendar from './SimpleAttendanceCalendar';
+import CustomReport from './CustomReport';
 
 function Reports() {
   const [activeReport, setActiveReport] = useState('attendance');
@@ -332,19 +333,15 @@ function Reports() {
   };
 
   const renderCustomReport = () => {
-    return (
-      <div className="text-center py-8 bg-gray-50 rounded-lg">
-        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        <h3 className="mt-2 text-sm font-medium text-gray-900">Custom Report</h3>
-        <p className="mt-1 text-sm text-gray-500">Custom report functionality will be available soon.</p>
-      </div>
-    );
+    return <CustomReport />;
   };
 
   const renderActiveReport = () => {
     if (!reportGenerated || reportData.length === 0) {
+      if (activeReport === 'custom') {
+        return renderCustomReport();
+      }
+      
       return (
         <div className="text-center py-8 bg-gray-50 rounded-lg">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -432,7 +429,7 @@ function Reports() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
               >
-                Custom Report
+                Custome Report
               </button>
             </nav>
           </div>
@@ -497,7 +494,7 @@ function Reports() {
             </div>
           ) : (
             <>
-              {reportGenerated && reportData.length > 0 && (
+              {reportGenerated && reportData.length > 0 && activeReport !== 'custom' && (
                 <div className="flex justify-end mb-4">
                   <button
                     onClick={exportToCSV}
