@@ -16,7 +16,7 @@ function AdminDashboardPage() {
 
   // Check if user is logged in
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const  token = localStorage.getItem('token');
     if (!token) {
       navigate('/login');
       return;

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
+const apiUrl = import.meta.env.VITE_API_URL
+
 function AttendanceHistory() {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,7 @@ function AttendanceHistory() {
   const fetchAttendanceHistory = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/v1/attendance/history', {
+      const response = await axios.get(`${apiUrl}/api/v1/attendance/history`, {
         headers: { Authorization: `Bearer ${token}` },
         params: dateRange
       });
@@ -57,7 +59,7 @@ function AttendanceHistory() {
       const startOfMonth = dayjs().year(currentYear).month(currentMonth).startOf('month').format('YYYY-MM-DD');
       const endOfMonth = dayjs().year(currentYear).month(currentMonth).endOf('month').format('YYYY-MM-DD');
       
-      const response = await axios.get('http://localhost:5000/api/v1/attendance/history', {
+      const response = await axios.get(`${apiUrl}/api/v1/attendance/history`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { startDate: startOfMonth, endDate: endOfMonth }
       });

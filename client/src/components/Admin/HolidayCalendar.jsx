@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -15,6 +16,7 @@ function HolidayCalendar() {
   const [editingHolidayId, setEditingHolidayId] = useState(null);
 
   const token = localStorage.getItem('token');
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     fetchHolidays();
@@ -23,52 +25,12 @@ function HolidayCalendar() {
   const fetchHolidays = async () => {
     setLoading(true);
     try {
-      // Use mock data for now since the API endpoint might not be available
-      const mockHolidays = [
-        {
-          _id: '1',
-          date: '2024-01-01',
-          name: 'New Year\'s Day',
-          description: 'New Year\'s Day celebration'
-        },
-        {
-          _id: '2',
-          date: '2024-01-26',
-          name: 'Republic Day',
-          description: 'National holiday'
-        },
-        {
-          _id: '3',
-          date: '2024-08-15',
-          name: 'Independence Day',
-          description: 'National holiday'
-        },
-        {
-          _id: '4',
-          date: '2024-10-02',
-          name: 'Gandhi Jayanti',
-          description: 'Birth anniversary of Mahatma Gandhi'
-        },
-        {
-          _id: '5',
-          date: '2024-12-25',
-          name: 'Christmas',
-          description: 'Christmas celebration'
-        }
-      ];
-      
-      setHolidays(mockHolidays);
-      setError(null);
-      
-      // Comment out the actual API call for now
-      /*
-      const response = await axios.get('http://localhost:5000/api/v1/settings/holidays', {
+      const response = await axios.get(`${apiUrl}/api/v1/settings/holidays`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       setHolidays(response.data.data.holidays || []);
       setError(null);
-      */
     } catch (err) {
       console.error('Error fetching holidays:', err);
       setError('Failed to fetch holidays. Please try again.');
@@ -90,31 +52,7 @@ function HolidayCalendar() {
     setLoading(true);
     
     try {
-      // Mock successful API call
-      setTimeout(() => {
-        // Add the new holiday to the existing list with a mock ID
-        const newId = Date.now().toString();
-        setHolidays(prevHolidays => [
-          ...prevHolidays,
-          {
-            _id: newId,
-            ...newHoliday
-          }
-        ]);
-        
-        // Reset form
-        setNewHoliday({
-          date: dayjs().format('YYYY-MM-DD'),
-          name: '',
-          description: ''
-        });
-        setIsAddingHoliday(false);
-        setLoading(false);
-      }, 500);
-      
-      // Comment out the actual API call for now
-      /*
-      await axios.post('http://localhost:5000/api/v1/settings/holidays', newHoliday, {
+      const response = await axios.post(`${apiUrl}/api/v1/settings/holidays`, newHoliday, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -126,7 +64,6 @@ function HolidayCalendar() {
       });
       setIsAddingHoliday(false);
       fetchHolidays();
-      */
     } catch (err) {
       console.error('Error adding holiday:', err);
       setError('Failed to add holiday. Please try again.');
@@ -139,30 +76,7 @@ function HolidayCalendar() {
     setLoading(true);
     
     try {
-      // Mock successful API call
-      setTimeout(() => {
-        // Update the holiday in the existing list
-        setHolidays(prevHolidays => 
-          prevHolidays.map(holiday => 
-            holiday._id === editingHolidayId 
-              ? { ...holiday, ...newHoliday } 
-              : holiday
-          )
-        );
-        
-        // Reset form
-        setNewHoliday({
-          date: dayjs().format('YYYY-MM-DD'),
-          name: '',
-          description: ''
-        });
-        setEditingHolidayId(null);
-        setLoading(false);
-      }, 500);
-      
-      // Comment out the actual API call for now
-      /*
-      await axios.patch(`http://localhost:5000/api/v1/settings/holidays/${editingHolidayId}`, newHoliday, {
+      await axios.patch(`${apiUrl}/api/v1/settings/holidays/${editingHolidayId}`, newHoliday, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -174,7 +88,6 @@ function HolidayCalendar() {
       });
       setEditingHolidayId(null);
       fetchHolidays();
-      */
     } catch (err) {
       console.error('Error updating holiday:', err);
       setError('Failed to update holiday. Please try again.');
@@ -187,23 +100,11 @@ function HolidayCalendar() {
     
     setLoading(true);
     try {
-      // Mock successful API call
-      setTimeout(() => {
-        // Remove the holiday from the list
-        setHolidays(prevHolidays => 
-          prevHolidays.filter(holiday => holiday._id !== id)
-        );
-        setLoading(false);
-      }, 500);
-      
-      // Comment out the actual API call for now
-      /*
-      await axios.delete(`http://localhost:5000/api/v1/settings/holidays/${id}`, {
+      await axios.delete(`${apiUrl}/api/v1/settings/holidays/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       fetchHolidays();
-      */
     } catch (err) {
       console.error('Error deleting holiday:', err);
       setError('Failed to delete holiday. Please try again.');

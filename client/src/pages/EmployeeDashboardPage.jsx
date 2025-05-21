@@ -1,8 +1,12 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import EmployeeHolidayCalendar from '../components/EmployeeHolidayCalendar';
+
+const apiUrl = import.meta.env.VITE_API_URL
 
 function EmployeeDashboardPage() {
   const [user, setUser] = useState(null);
@@ -62,13 +66,13 @@ function EmployeeDashboardPage() {
   const fetchDashboardData = async () => {
     try {
       // Fetch today's attendance
-      const attendanceRes = await axios.get('http://localhost:5000/api/v1/attendance/today', {
+      const attendanceRes = await axios.get(`${apiUrl}/api/v1/attendance/today`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTodayAttendance(attendanceRes.data.data.attendance);
 
       // Fetch recent leave requests
-      const leavesRes = await axios.get('http://localhost:5000/api/v1/leaves', {
+      const leavesRes = await axios.get(`${apiUrl}/api/v1/leaves`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setRecentLeaves(leavesRes.data.data.leaves?.slice(0, 5) || []);
@@ -86,7 +90,7 @@ function EmployeeDashboardPage() {
       const startOfMonth = dayjs().year(currentYear).month(currentMonth).startOf('month').format('YYYY-MM-DD');
       const endOfMonth = dayjs().year(currentYear).month(currentMonth).endOf('month').format('YYYY-MM-DD');
       
-      const summaryRes = await axios.get('http://localhost:5000/api/v1/attendance/history', {
+      const summaryRes = await axios.get(`${apiUrl}/api/v1/attendance/history`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { startDate: startOfMonth, endDate: endOfMonth }
       });
@@ -269,7 +273,7 @@ function EmployeeDashboardPage() {
       <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Attendance Card */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-white overflow-hidden shadow-lg rounded-lg">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-lg font-medium text-gray-900">Today's Attendance</h3>
               <div className="mt-5">
@@ -307,7 +311,7 @@ function EmployeeDashboardPage() {
           </div>
           
           {/* Profile Card */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-white overflow-hidden shadow-lg rounded-lg">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-lg font-medium text-gray-900">My Profile</h3>
               <div className="mt-3">
@@ -357,7 +361,7 @@ function EmployeeDashboardPage() {
 
         {/* Attendance Calendar Tab */}
         {activeTab === 'attendance' && (
-          <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-6">
             <div className="px-4 py-5 sm:px-6 bg-gradient-to-r from-blue-500 to-blue-600">
               <h3 className="text-lg leading-6 font-medium text-white">Monthly Attendance Summary</h3>
             </div>
@@ -484,7 +488,7 @@ function EmployeeDashboardPage() {
         )}
 
         {/* Quick Actions */}
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
           <div className="px-4 py-5 sm:px-6 bg-gradient-to-r from-gray-700 to-gray-800">
             <h3 className="text-lg leading-6 font-medium text-white">Quick Actions</h3>
           </div>

@@ -1,7 +1,11 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-unused-vars */
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+
+const apiUrl = import.meta.env.VITE_API_URL
 
 function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -23,7 +27,7 @@ function UserManagement() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/v1/users', {
+      const response = await axios.get(`${apiUrl}/api/v1/users`, {
         headers: {
           Authorization: `Bearer ${token || localStorage.getItem('token')}`,
         },
@@ -53,7 +57,7 @@ function UserManagement() {
       
       // Send the request
       const response = await axios.post(
-        'http://localhost:5000/api/v1/auth/signup',
+        `${apiUrl}/api/v1/auth/signup`,
         userData,
         {
           headers: {
@@ -91,7 +95,7 @@ function UserManagement() {
     if (!confirm('Are you sure you want to delete this user?')) return;
     
     try {
-      await axios.delete(`http://localhost:5000/api/v1/users/${userId}`, {
+      await axios.delete(`${apiUrl}/api/v1/users/${userId}`, {
         headers: {
           Authorization: `Bearer ${token || localStorage.getItem('token')}`,
         },

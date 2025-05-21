@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
+const apiUrl = import.meta.env.VITE_API_URL
+
 function EmployeeAttendanceDashboard({ employeeId, onClose }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,7 +21,7 @@ function EmployeeAttendanceDashboard({ employeeId, onClose }) {
 
   const fetchEmployeeData = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/v1/users/${employeeId}`, {
+      const response = await axios.get(`${apiUrl}/api/v1/users/${employeeId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setEmployeeInfo(response.data.data.user);
@@ -36,7 +38,7 @@ function EmployeeAttendanceDashboard({ employeeId, onClose }) {
       const startDate = dayjs().year(currentYear).month(currentMonth).startOf('month').format('YYYY-MM-DD');
       const endDate = dayjs().year(currentYear).month(currentMonth).endOf('month').format('YYYY-MM-DD');
       
-      const response = await axios.get(`http://localhost:5000/api/v1/attendance/employee/${employeeId}`, {
+      const response = await axios.get(`${apiUrl}/api/v1/attendance/employee/${employeeId}`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { startDate, endDate }
       });

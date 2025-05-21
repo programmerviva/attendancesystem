@@ -22,7 +22,6 @@ function LeaveRequestStatus({ refreshTrigger }) {
   const fetchLeaveRequests = async () => {
     setLoading(true);
     try {
-      // Use the real API endpoint to get the latest data
       const response = await axios.get('http://localhost:5000/api/v1/leaves', {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -31,16 +30,9 @@ function LeaveRequestStatus({ refreshTrigger }) {
       
       setLeaveRequests(response.data.data.leaves || []);
       setError(null);
-      
-      // Also update the mock data in localStorage for backup
-      localStorage.setItem('mockLeaves', JSON.stringify(response.data.data.leaves || []));
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch leave requests');
       console.error('Error fetching leave requests:', err);
-      
-      // Fallback to mock data if API fails
-      const mockLeaves = JSON.parse(localStorage.getItem('mockLeaves') || '[]');
-      setLeaveRequests(mockLeaves);
     } finally {
       setLoading(false);
     }

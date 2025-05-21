@@ -4,6 +4,8 @@ import { useLocation } from '../../hooks/useLocation';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 
+const apiUrl = import.meta.env.VITE_API_URL
+
 // Office coordinates
 const OFFICE_LAT = 28.4067738;
 const OFFICE_LON = 77.0414672;
@@ -30,7 +32,7 @@ function AttendanceForm() {
     // Fetch today's attendance record
     const fetchTodayAttendance = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/v1/attendance/today', {
+        const response = await axios.get(`${apiUrl}/api/v1/attendance/today`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setTodayAttendance(response.data.data.attendance);
@@ -100,7 +102,7 @@ function AttendanceForm() {
 
     try {
       const response = await axios.post(
-        'http://localhost:5000/api/v1/attendance',
+        `${apiUrl}/api/v1/attendance`,
         {
           type,
           latitude: location.latitude,

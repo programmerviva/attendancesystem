@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import HolidayCalendar from './HolidayCalendar';
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
 function Settings() {
   const [settings, setSettings] = useState({
     companyName: 'PeakForce',
@@ -124,9 +126,9 @@ function Settings() {
       console.log('Saving settings:', payload);
       
       // In a real implementation, you would send to server:
-      // await axios.patch('http://localhost:5000/api/v1/settings', payload, {
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
+      await axios.patch(`${apiUrl}/api/v1/settings`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
       // For now, just simulate success
       setTimeout(() => {

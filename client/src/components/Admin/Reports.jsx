@@ -4,6 +4,8 @@ import dayjs from 'dayjs';
 import SimpleAttendanceCalendar from './SimpleAttendanceCalendar';
 import CustomReport from './CustomReport';
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
 function Reports() {
   const [activeReport, setActiveReport] = useState('attendance');
   const [dateRange, setDateRange] = useState({
@@ -27,16 +29,16 @@ function Reports() {
       
       switch (activeReport) {
         case 'attendance':
-          endpoint = 'http://localhost:5000/api/v1/attendance/all';
+          endpoint = `${apiUrl}/api/v1/attendance/all`;
           break;
         case 'leave':
-          endpoint = 'http://localhost:5000/api/v1/leaves/all';
+          endpoint = `${apiUrl}/api/v1/leaves/all`;
           break;
         case 'department':
-          endpoint = 'http://localhost:5000/api/v1/users';
+          endpoint = `${apiUrl}/api/v1/users`;
           break;
         default:
-          endpoint = 'http://localhost:5000/api/v1/attendance/all';
+          endpoint = `${apiUrl}/api/v1/attendance/all`;
       }
       
       const response = await axios.get(endpoint, {

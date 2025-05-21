@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
+
 function LeaveApproval() {
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,14 +35,14 @@ function LeaveApproval() {
   const fetchLeaveRequests = async () => {
     setLoading(true);
     try {
-      let endpoint = 'http://localhost:5000/api/v1/leaves/pending';
+      let endpoint = `${apiUrl}/api/v1/leaves/pending`;
       
       if (filterStatus === 'all') {
-        endpoint = 'http://localhost:5000/api/v1/leaves/all';
+        endpoint = `${apiUrl}/api/v1/leaves/all`;
       } else if (filterStatus === 'approved') {
-        endpoint = 'http://localhost:5000/api/v1/leaves/approved';
+        endpoint = `${apiUrl}/api/v1/leaves/approved`;
       } else if (filterStatus === 'rejected') {
-        endpoint = 'http://localhost:5000/api/v1/leaves/rejected';
+        endpoint = `${apiUrl}/api/v1/leaves/rejected`;
       }
       
       console.log('Fetching leaves from endpoint:', endpoint);
@@ -67,7 +70,7 @@ function LeaveApproval() {
     try {
       setLoading(true);
       await axios.patch(
-        `http://localhost:5000/api/v1/leaves/${leaveId}`,
+        `${apiUrl}/api/v1/leaves/${leaveId}`,
         { 
           status: 'approved',
           remarks: remarks || 'Approved by admin'
@@ -93,7 +96,7 @@ function LeaveApproval() {
     try {
       setLoading(true);
       await axios.patch(
-        `http://localhost:5000/api/v1/leaves/${leaveId}`,
+        `${apiUrl}/api/v1/leaves/${leaveId}`,
         { 
           status: 'rejected',
           remarks: remarks || 'Rejected by admin'

@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import dayjs from 'dayjs';
+
+const apiUrl = import.meta.env.REACT_APP_URL  
 
 function SimpleAttendanceCalendar({ employeeId, onClose }) {
   const [currentMonth, setCurrentMonth] = useState(dayjs().month());
@@ -7,62 +10,34 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
   const [attendanceData, setAttendanceData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Sample data - in a real app, this would come from an API
+  const token = localStorage.getItem('token');
+
   useEffect(() => {
+    fetchAttendanceData();
+  }, [currentMonth, currentYear, employeeId]);
+
+  const fetchAttendanceData = async () => {
     setLoading(true);
-    
-    // Simulate API call with timeout
-    setTimeout(() => {
-      // Generate sample attendance data for the month
-      const daysInMonth = dayjs().year(currentYear).month(currentMonth).daysInMonth();
-      const sampleData = [];
+    try {
+      const startDate = dayjs().year(currentYear).month(currentMonth).startOf('month').format('YYYY-MM-DD');
+      const endDate = dayjs().year(currentYear).month(currentMonth).endOf('month').format('YYYY-MM-DD');
       
-      for (let i = 1; i <= daysInMonth; i++) {
-        // Skip weekends (Saturday = 6, Sunday = 0)
-        const dayOfWeek = dayjs().year(currentYear).month(currentMonth).date(i).day();
-        if (dayOfWeek === 0 || dayOfWeek === 6) continue;
-        
-        // Random attendance status
-        const random = Math.random();
-        let status, checkInTime;
-        
-        if (random < 0.7) {
-          // Present - on time (70% chance)
-          status = 'present';
-          checkInTime = '09:00';
-        } else if (random < 0.85) {
-          // Short leave (15% chance)
-          status = 'short-leave';
-          checkInTime = '10:45';
-        } else if (random < 0.95) {
-          // Half day (10% chance)
-          status = 'half-day';
-          checkInTime = '13:30';
-        } else {
-          // Absent (5% chance)
-          status = 'absent';
-          checkInTime = null;
-        }
-        
-        if (checkInTime) {
-          sampleData.push({
-            date: dayjs().year(currentYear).month(currentMonth).date(i).format('YYYY-MM-DD'),
-            checkIn: {
-              time: dayjs().year(currentYear).month(currentMonth).date(i).hour(parseInt(checkInTime.split(':')[0])).minute(parseInt(checkInTime.split(':')[1])).format()
-            },
-            status
-          });
-        }
-      }
+      const response = await axios.get(`${apiUrl}/api/v1/attendance/employee/${employeeId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { startDate, endDate }
+      });
       
-      setAttendanceData(sampleData);
+      setAttendanceData(response.data.data.attendance || []);
+    } catch (err) {
+      console.error('Error fetching attendance data:', err);
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, [currentMonth, currentYear]);
+    }
+  };
 
   const getAttendanceStatus = (date) => {
     const dayRecord = attendanceData.find(record => 
-      record.date === date
+      dayjs(record.date).format('YYYY-MM-DD') === date
     );
     
     // Check if it's a weekend
@@ -78,12 +53,12 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
     switch (dayRecord.status) {
       case 'present':
         return { status: 'present', color: 'bg-green-200' };
-      case 'short-leave':
-        return { status: 'short-leave', color: 'bg-blue-200' };
+      case 'late':
+        return { status: 'late', color: 'bg-blue-200' };
       case 'half-day':
         return { status: 'half-day', color: 'bg-yellow-200' };
       default:
-        return { status: 'absent', color: 'bg-red-200' };
+        return { status: dayRecord.status || 'absent', color: 'bg-red-200' };
     }
   };
 
@@ -120,7 +95,7 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
 
   const showDayDetails = (date) => {
     const dayRecord = attendanceData.find(record => 
-      record.date === date
+      dayjs(record.date).format('YYYY-MM-DD') === date
     );
     
     // Check if it's a weekend
@@ -136,8 +111,9 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
     }
     
     const checkInTime = dayRecord.checkIn?.time ? dayjs(dayRecord.checkIn.time).format('hh:mm A') : 'N/A';
+    const checkOutTime = dayRecord.checkOut?.time ? dayjs(dayRecord.checkOut.time).format('hh:mm A') : 'N/A';
     
-    alert(`Date: ${date}\nCheck-in: ${checkInTime}\nStatus: ${dayRecord.status}`);
+    alert(`Date: ${date}\nCheck-in: ${checkInTime}\nCheck-out: ${checkOutTime}\nStatus: ${dayRecord.status}`);
   };
 
   const previousMonth = () => {
@@ -168,8 +144,8 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
     record.status === 'present'
   ).length;
   
-  const shortLeaveDays = attendanceData.filter(record => 
-    record.status === 'short-leave'
+  const lateDays = attendanceData.filter(record => 
+    record.status === 'late'
   ).length;
   
   const halfDays = attendanceData.filter(record => 
@@ -181,9 +157,9 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
     (_, i) => dayjs().year(currentYear).month(currentMonth).date(i + 1).day())
     .filter(day => day === 0 || day === 6).length;
   
-  // Calculate absent days (excluding weekends)
+  // Calculate working days (excluding weekends)
   const workingDays = dayjs().year(currentYear).month(currentMonth).daysInMonth() - weekendDays;
-  const absentDays = workingDays - presentDays - shortLeaveDays - halfDays;
+  const absentDays = workingDays - presentDays - lateDays - halfDays;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -215,10 +191,10 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Short Leaves</p>
-                    <p className="font-medium text-lg">{shortLeaveDays}</p>
+                    <p className="text-sm text-gray-500">Late Days</p>
+                    <p className="font-medium text-lg">{lateDays}</p>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${(shortLeaveDays / workingDays) * 100}%` }}></div>
+                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${(lateDays / workingDays) * 100}%` }}></div>
                     </div>
                   </div>
                   <div>
@@ -282,7 +258,7 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
                 </div>
                 <div className="flex items-center">
                   <div className="w-4 h-4 bg-blue-200 mr-1"></div>
-                  <span className="text-xs">Short Leave</span>
+                  <span className="text-xs">Late</span>
                 </div>
                 <div className="flex items-center">
                   <div className="w-4 h-4 bg-yellow-200 mr-1"></div>

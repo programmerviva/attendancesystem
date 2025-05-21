@@ -4,6 +4,8 @@ import dayjs from 'dayjs';
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
@@ -30,7 +32,7 @@ function CustomReport() {
   useEffect(() => {
     const fetchDepartmentsAndEmployees = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/v1/users', {
+        const response = await axios.get(`${apiUrl}/api/v1/users`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -76,7 +78,7 @@ function CustomReport() {
         endDate: dateRange.endDate
       };
       
-      const response = await axios.get('http://localhost:5000/api/v1/attendance/all', {
+      const response = await axios.get(`${apiUrl}/api/v1/attendance/all`, {
         headers: { Authorization: `Bearer ${token}` },
         params
       });
@@ -313,8 +315,8 @@ function CustomReport() {
   const departmentChartData = prepareDepartmentChartData();
 
   return (
-    <div>
-      <div className="mb-6 bg-gray-50 p-4 rounded-lg">
+    <div className="p-6 bg-gray-100 min-h-screen">
+      <div className="mb-6 bg-white shadow-md rounded-lg p-4">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Custom Report Filter</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">

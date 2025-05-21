@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+ const apiUrl = import.meta.env.VITE_API_URL;
+
 function DashboardStats() {
   const [stats, setStats] = useState({
     employees: 0,
@@ -17,23 +19,23 @@ function DashboardStats() {
         if (!token) return;
 
         // Fetch employee count
-        const employeesRes = await axios.get('http://localhost:5000/api/v1/users/count', {
+        const employeesRes = await axios.get(`${apiUrl}/api/v1/users/count`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         // Fetch pending leaves (if API exists)
         let pendingLeaves = 0;
         try {
-          const leavesRes = await axios.get('http://localhost:5000/api/v1/leaves/pending/count', {
+          const leavesRes = await axios.get(`${apiUrl}/api/v1/leaves/pending/count`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           pendingLeaves = leavesRes.data?.count || 0;
         } catch (error) {
-          console.log('Pending leaves API not available yet');
+          console.log('Pending leaves API not available yet', error);
         }
 
         // Get unique departments count
-        const usersRes = await axios.get('http://localhost:5000/api/v1/users', {
+        const usersRes = await axios.get(`${apiUrl}/api/v1/users`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         

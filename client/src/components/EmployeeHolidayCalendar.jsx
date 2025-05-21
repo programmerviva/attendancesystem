@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
 function EmployeeHolidayCalendar() {
   const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,6 +11,7 @@ function EmployeeHolidayCalendar() {
   const [currentYear, setCurrentYear] = useState(dayjs().year());
 
   const token = localStorage.getItem('token');
+ 
 
   useEffect(() => {
     fetchHolidays();
@@ -17,62 +20,21 @@ function EmployeeHolidayCalendar() {
   const fetchHolidays = async () => {
     setLoading(true);
     try {
-      // Use mock data instead of API call
-      const mockHolidays = [
-        {
-          _id: '1',
-          date: `${currentYear}-01-01`,
-          name: 'New Year\'s Day',
-          description: 'New Year\'s Day celebration'
-        },
-        {
-          _id: '2',
-          date: `${currentYear}-01-26`,
-          name: 'Republic Day',
-          description: 'National holiday'
-        },
-        {
-          _id: '3',
-          date: `${currentYear}-08-15`,
-          name: 'Independence Day',
-          description: 'National holiday'
-        },
-        {
-          _id: '4',
-          date: `${currentYear}-10-02`,
-          name: 'Gandhi Jayanti',
-          description: 'Birth anniversary of Mahatma Gandhi'
-        },
-        {
-          _id: '5',
-          date: `${currentYear}-12-25`,
-          name: 'Christmas',
-          description: 'Christmas celebration'
-        },
-        {
-          _id: '6',
-          date: `${currentYear}-11-12`,
-          name: 'Diwali',
-          description: 'Festival of lights'
-        }
-      ];
-      
-      setHolidays(mockHolidays);
-      setError(null);
-      
-      // Comment out the actual API call
-      /*
-      const response = await axios.get('http://localhost:5000/api/v1/settings/holidays', {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { year: currentYear }
+      const response = await axios.get(`${apiUrl}/api/v1/settings/holidays`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       
-      setHolidays(response.data.data.holidays || []);
+      // Filter holidays for the current year
+      const yearHolidays = response.data.data.holidays.filter(
+        holiday => dayjs(holiday.date).year() === currentYear
+      );
+      
+      setHolidays(yearHolidays);
       setError(null);
-      */
     } catch (err) {
       console.error('Error fetching holidays:', err);
       setError('Failed to fetch company holidays');
+      setHolidays([]);
     } finally {
       setLoading(false);
     }

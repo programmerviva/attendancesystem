@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
-const SERVER_URL = 'http://localhost:5000';
+const apiUrl = import.meta.env.VITE_API_URL
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -46,7 +46,7 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${SERVER_URL}/api/v1/auth/login`, {
+      const response = await axios.post(`${apiUrl}/api/v1/auth/login`, {
         email,
         password
       });
