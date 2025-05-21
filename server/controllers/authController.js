@@ -1,211 +1,328 @@
-import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import { promisify } from 'util';
-import AppError from '../utils/appError.js';
+import Admin from '../models/Admin.js';
+import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import dotenv from 'dotenv';
-import mongoose from 'mongoose';
+import crypto from 'crypto';
+import AppError from '../utils/appError.js';
+import sendEmail from '../utils/email.js';
 
-// Ensure environment variables are loaded
-dotenv.config();
-
-// Helper to create JWT token
-const signToken = id => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'your-secret-key', {
-    expiresIn: process.env.JWT_EXPIRES_IN || '90d'
+// Generate JWT token
+const signToken = (id, isAdmin = false) => {
+  return jwt.sign({ id, isAdmin }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN
   });
 };
 
-// 1. SIGNUP - COMPLETELY REWRITTEN TO BYPASS MODEL HOOKS
-export const signup = async (req, res, next) => {
-  try {
-    // Check if user with this email already exists
-    const existingUser = await User.findOne({ email: req.body.email });
-    if (existingUser) {
-      return next(new AppError('User with this email already exists', 400));
+// Create and send token to client
+const createSendToken = (user, statusCode, res, isAdmin = false) => {
+  const token = signToken(user._id, isAdmin);
+  
+  // Remove password from output
+  user.password = undefined;
+  
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    user: {
+      ...user._doc,
+      isAdmin
     }
+  });
+};
 
-    // Hash the password manually
-    const hashedPassword = await bcrypt.hash(req.body.password, 12);
+// Register new user
+export const register = async (req, res, next) => {
+  try {
+    const { fullName, email, password, confirmPassword } = req.body;
     
-    // Generate employee ID
-    const currentYear = new Date().getFullYear();
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const empId = `${randomNum}${currentYear}`;
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      return next(new AppError('Passwords do not match', 400));
+    }
     
-    // Create user document directly using MongoDB driver
-    const db = mongoose.connection.db;
-    const usersCollection = db.collection('users');
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return next(new AppError('Email already in use', 400));
+    }
     
-    const newUser = {
-      empId: empId,
-      fullName: req.body.fullName,
-      email: req.body.email,
-      mobile: req.body.mobile,
-      password: hashedPassword,
-      department: req.body.department || 'Administration',
-      designation: req.body.designation || 'Employee',
-      role: req.body.role || 'employee',
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    // Insert directly into MongoDB collection
-    const result = await usersCollection.insertOne(newUser);
-    
-    // Get the inserted document
-    const insertedUser = await usersCollection.findOne({ _id: result.insertedId });
-    
-    // Create token
-    const token = signToken(insertedUser._id);
-
-    // Remove password from output
-    delete insertedUser.password;
-
-    res.status(201).json({
-      status: 'success',
-      token,
-      data: {
-        user: insertedUser
-      }
+    // Create new user
+    const newUser = await User.create({
+      fullName,
+      email,
+      password,
+      role: 'employee' // Default role is employee
     });
+    
+    createSendToken(newUser, 201, res);
   } catch (err) {
-    console.error('Signup error:', err);
     next(err);
   }
 };
 
-// 2. LOGIN
+// Login user
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     
-    console.log('Login attempt:', email);
-
-    // Hardcoded admin login as fallback
-    if ((email === 'admin@example.com' && password === 'admin123') || 
-        (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD)) {
-      
-      // Create a mock admin user object for frontend
-      const adminUser = {
-        _id: '000000000000000000000000', // Mock ID for admin
-        fullName: { first: 'Admin', last: 'User' },
-        email: email,
-        role: 'admin',
-        department: 'Administration',
-        designation: 'Administrator'
-      };
-      
-      // Generate token for admin
-      const token = jwt.sign(
-        { isAdmin: true }, 
-        process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: process.env.JWT_EXPIRES_IN || '90d' }
-      );
-      
-      return res.status(200).json({
-        status: 'success',
-        token,
-        user: adminUser
-      });
+    // Check if email and password exist
+    if (!email || !password) {
+      return next(new AppError('Please provide email and password', 400));
     }
     
-    // Regular employee login - USING DIRECT MONGODB QUERY
-    const db = mongoose.connection.db;
-    const usersCollection = db.collection('users');
-    const user = await usersCollection.findOne({ email: email });
-
-    if (!user) {
-      console.log('User not found:', email);
+    // First check if it's an admin login
+    const admin = await Admin.findOne({ email }).select('+password');
+    
+    if (admin) {
+      // Compare passwords directly using bcrypt
+      const isPasswordCorrect = await bcrypt.compare(password, admin.password);
+      
+      if (isPasswordCorrect) {
+        // Admin login successful
+        return createSendToken(admin, 200, res, true);
+      }
+    }
+    
+    // If not admin, check regular user
+    const user = await User.findOne({ email }).select('+password');
+    
+    if (!user || !(await user.correctPassword(password, user.password))) {
       return next(new AppError('Incorrect email or password', 401));
     }
-
-    console.log('User found:', user.email);
     
-    // Compare passwords using bcrypt
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-    console.log('Password comparison result:', isPasswordCorrect);
+    // User login successful
+    createSendToken(user, 200, res);
+  } catch (err) {
+    next(err);
+  }
+};
 
-    if (isPasswordCorrect) {
-      const token = signToken(user._id);
+// Protect routes - middleware to check if user is logged in
+export const protect = async (req, res, next) => {
+  try {
+    // 1) Getting token and check if it's there
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+    
+    if (!token) {
+      return next(new AppError('You are not logged in! Please log in to get access.', 401));
+    }
+    
+    // 2) Verification token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // 3) Check if user still exists
+    let currentUser;
+    
+    if (decoded.isAdmin) {
+      currentUser = await Admin.findById(decoded.id);
+    } else {
+      currentUser = await User.findById(decoded.id);
+    }
+    
+    if (!currentUser) {
+      return next(new AppError('The user belonging to this token no longer exists.', 401));
+    }
+    
+    // 4) Check if user changed password after the token was issued
+    if (currentUser.changedPasswordAfter && currentUser.changedPasswordAfter(decoded.iat)) {
+      return next(new AppError('User recently changed password! Please log in again.', 401));
+    }
+    
+    // GRANT ACCESS TO PROTECTED ROUTE
+    req.user = currentUser;
+    req.isAdmin = decoded.isAdmin || false;
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Restrict to certain roles
+export const restrictTo = (...roles) => {
+  return (req, res, next) => {
+    // Admin always has access
+    if (req.isAdmin) return next();
+    
+    // For regular users, check role
+    if (!roles.includes(req.user.role)) {
+      return next(new AppError('You do not have permission to perform this action', 403));
+    }
+    
+    next();
+  };
+};
+
+// Forgot password
+export const forgotPassword = async (req, res, next) => {
+  try {
+    // 1) Get user based on POSTed email
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) {
+      return next(new AppError('There is no user with that email address.', 404));
+    }
+    
+    // 2) Generate the random reset token
+    const resetToken = user.createPasswordResetToken();
+    await user.save({ validateBeforeSave: false });
+    
+    // 3) Send it to user's email
+    // Use client URL from environment or fallback to a default
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const resetURL = `${clientUrl}/reset-password/${resetToken}`;
+    
+    const message = `Forgot your password? Click the link below to reset your password: ${resetURL}\n\nIf you didn't forget your password, please ignore this email!`;
+    
+    try {
+      const emailSent = await sendEmail({
+        email: user.email,
+        subject: 'Your password reset token (valid for 10 min)',
+        message
+      });
       
-      // Remove password from output
-      delete user.password;
-      
-      console.log('Login successful for:', user.email);
+      if (!emailSent) {
+        // If email sending failed but didn't throw an error
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        await user.save({ validateBeforeSave: false });
+        
+        return next(new AppError('There was an error sending the email. Try again later!', 500));
+      }
       
       res.status(200).json({
         status: 'success',
-        token,
-        user: user
+        message: 'Token sent to email!'
       });
-    } else {
-      console.log('Password incorrect for:', email);
-      return next(new AppError('Incorrect email or password', 401));
+    } catch (err) {
+      user.passwordResetToken = undefined;
+      user.passwordResetExpires = undefined;
+      await user.save({ validateBeforeSave: false });
+      
+      return next(new AppError('There was an error sending the email. Try again later!', 500));
     }
   } catch (err) {
-    console.error('Login error:', err);
     next(err);
   }
 };
 
-// 3. PROTECT MIDDLEWARE (to be used in routes)
-export const protect = async (req, res, next) => {
+// Reset password
+export const resetPassword = async (req, res, next) => {
   try {
-    let token;
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
-    ) {
-      token = req.headers.authorization.split(' ')[1];
-    }
-
-    if (!token) {
-      return next(
-        new AppError('You are not logged in! Please log in.', 401)
-      );
-    }
-
-    // Decode the token
-    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET || 'your-secret-key');
+    // 1) Get user based on the token
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(req.params.token)
+      .digest('hex');
     
-    // Check if it's an admin token
-    if (decoded.isAdmin) {
-      // Set admin user object
-      req.user = {
-        _id: '000000000000000000000000',
-        fullName: { first: 'Admin', last: 'User' },
-        email: process.env.ADMIN_EMAIL || 'admin@example.com',
-        role: 'admin'
-      };
-      return next();
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() }
+    });
+    
+    // 2) If token has not expired, and there is user, set the new password
+    if (!user) {
+      return next(new AppError('Token is invalid or has expired', 400));
     }
     
-    // For regular users, find in database using direct MongoDB query
-    const db = mongoose.connection.db;
-    const usersCollection = db.collection('users');
-    const currentUser = await usersCollection.findOne({ _id: new mongoose.Types.ObjectId(decoded.id) });
-
-    if (!currentUser) {
-      return next(new AppError('User no longer exists.', 401));
-    }
-
-    req.user = currentUser;
-    next();
+    user.password = req.body.password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+    
+    // 3) Update changedPasswordAt property for the user
+    // This is handled by a pre-save middleware in the User model
+    
+    // 4) Log the user in, send JWT
+    createSendToken(user, 200, res);
   } catch (err) {
     next(err);
   }
 };
 
-// 4. ROLE RESTRICTION MIDDLEWARE
-export const restrictTo = (...roles) => {
-  return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return next(
-        new AppError('You do not have permission for this action', 403)
-      );
+// Update password
+export const updatePassword = async (req, res, next) => {
+  try {
+    // 1) Get user from collection
+    let user;
+    
+    if (req.isAdmin) {
+      user = await Admin.findById(req.user.id).select('+password');
+    } else {
+      user = await User.findById(req.user.id).select('+password');
     }
-    next();
-  };
+    
+    // 2) Check if POSTed current password is correct
+    if (!(await user.correctPassword(req.body.currentPassword, user.password))) {
+      return next(new AppError('Your current password is wrong.', 401));
+    }
+    
+    // 3) If so, update password
+    user.password = req.body.password;
+    await user.save();
+    
+    // 4) Log user in, send JWT
+    createSendToken(user, 200, res, req.isAdmin);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Check if email exists
+export const checkEmail = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return next(new AppError('Please provide an email', 400));
+    }
+    
+    // Check both User and Admin collections
+    const user = await User.findOne({ email });
+    const admin = await Admin.findOne({ email });
+    
+    res.status(200).json({
+      status: 'success',
+      exists: !!(user || admin)
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Direct password reset (without token)
+export const directReset = async (req, res, next) => {
+  try {
+    const { email, password, confirmPassword } = req.body;
+    
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      return next(new AppError('Passwords do not match', 400));
+    }
+    
+    // Find user by email
+    const user = await User.findOne({ email });
+    const admin = await Admin.findOne({ email });
+    
+    if (!user && !admin) {
+      return next(new AppError('No user found with that email address', 404));
+    }
+    
+    // Update password for the found account
+    if (user) {
+      user.password = password;
+      await user.save();
+    } else {
+      admin.password = password;
+      await admin.save();
+    }
+    
+    res.status(200).json({
+      status: 'success',
+      message: 'Password has been reset successfully'
+    });
+  } catch (err) {
+    next(err);
+  }
 };

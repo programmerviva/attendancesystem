@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
-const apiUrl = import.meta.env.VITE_API_URL;
-
 function EmployeeHolidayCalendar() {
   const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,34 +9,31 @@ function EmployeeHolidayCalendar() {
   const [currentYear, setCurrentYear] = useState(dayjs().year());
 
   const token = localStorage.getItem('token');
- 
+  const apiUrl = 'http://localhost:5000';
 
   useEffect(() => {
+    const fetchHolidays = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(`${apiUrl}/api/v1/settings/holidays`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        setHolidays(response.data.data.holidays.filter(
+          holiday => dayjs(holiday.date).year() === currentYear
+        ));
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching holidays:', err);
+        setError('Failed to fetch company holidays');
+        setHolidays([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
     fetchHolidays();
-  }, [currentYear]);
-
-  const fetchHolidays = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`${apiUrl}/api/v1/settings/holidays`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      // Filter holidays for the current year
-      const yearHolidays = response.data.data.holidays.filter(
-        holiday => dayjs(holiday.date).year() === currentYear
-      );
-      
-      setHolidays(yearHolidays);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching holidays:', err);
-      setError('Failed to fetch company holidays');
-      setHolidays([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [currentYear, token]);
 
   const formatDate = (dateString) => {
     return dayjs(dateString).format('MMM DD, YYYY');
@@ -94,7 +89,6 @@ function EmployeeHolidayCalendar() {
           <div className="text-center py-4 text-gray-500">No holidays defined for {currentYear}</div>
         ) : (
           <>
-            {/* Upcoming Holidays Section */}
             <div className="mb-6">
               <h4 className="text-sm font-medium text-gray-500 mb-3">UPCOMING HOLIDAYS</h4>
               <div className="space-y-3">
@@ -115,7 +109,6 @@ function EmployeeHolidayCalendar() {
               </div>
             </div>
             
-            {/* All Holidays Table */}
             <div>
               <h4 className="text-sm font-medium text-gray-500 mb-3">ALL HOLIDAYS ({currentYear})</h4>
               <div className="overflow-x-auto">

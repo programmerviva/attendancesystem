@@ -10,13 +10,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 function AdminDashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [showDropdown, setShowDropdown] = useState(false);
 
   // Check if user is logged in
   useEffect(() => {
-    const  token = localStorage.getItem('token');
+    const token = localStorage.getItem('token');
     if (!token) {
       navigate('/login');
       return;
@@ -38,6 +39,18 @@ function AdminDashboardPage() {
       }
     }
   }, [location, navigate]);
+
+  const handleLogout = () => {
+    // Remove token and user data from localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Call the logout function from AuthContext
+    logout();
+    
+    // Navigate to login page
+    navigate('/login');
+  };
 
   // Render the active component based on the selected tab
   const renderActiveComponent = () => {
@@ -119,6 +132,17 @@ function AdminDashboardPage() {
             </svg>
             Settings
           </button>
+          
+          {/* Logout Button */}
+          <button 
+            className="flex items-center px-6 py-3 text-white w-full text-left hover:bg-red-700 mt-4"
+            onClick={handleLogout}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+          </button>
         </nav>
       </div>
 
@@ -147,7 +171,10 @@ function AdminDashboardPage() {
                 </svg>
               </button>
               <div className="relative">
-                <button className="flex items-center text-gray-600 focus:outline-none">
+                <button 
+                  className="flex items-center text-gray-600 focus:outline-none"
+                  onClick={() => setShowDropdown(!showDropdown)}
+                >
                   <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
                     {user?.fullName?.first?.charAt(0) || 'A'}
                   </div>
@@ -158,6 +185,18 @@ function AdminDashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
+                
+                {/* User Dropdown Menu */}
+                {showDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

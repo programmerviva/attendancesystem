@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import HolidayCalendar from './HolidayCalendar';
 
-const apiUrl = import.meta.env.VITE_API_URL;
+const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function Settings() {
   const [settings, setSettings] = useState({
@@ -41,20 +41,24 @@ function Settings() {
 
   const token = localStorage.getItem('token');
 
+  // Fetch settings from server when component mounts
   useEffect(() => {
-    // Fetch settings from server
     const fetchSettings = async () => {
       try {
-        // For now, just use default settings
-        console.log('Using default settings');
-        // In a real implementation, you would fetch from server
+        const response = await axios.get(`${apiUrl}/api/v1/settings`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (response.data && response.data.data && response.data.data.settings) {
+          setSettings(response.data.data.settings);
+        }
       } catch (err) {
         console.error('Error fetching settings:', err);
       }
     };
 
     fetchSettings();
-  }, [token]);
+  }, [token, apiUrl]);
 
   const handleEdit = (section) => {
     setEditMode({
@@ -122,36 +126,50 @@ function Settings() {
         payload = { [section]: settings[section] };
       }
       
-      // Simulate successful API call
       console.log('Saving settings:', payload);
       
-      // In a real implementation, you would send to server:
-      await axios.patch(`${apiUrl}/api/v1/settings`, payload, {
+      // Send to server
+      const response = await axios.patch(`${apiUrl}/api/v1/settings`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // For now, just simulate success
-      setTimeout(() => {
-        setSuccess(`${section.charAt(0).toUpperCase() + section.slice(1).replace(/([A-Z])/g, ' $1')} updated successfully!`);
-        setEditMode({
-          ...editMode,
-          [section]: false
-        });
-        setLoading(false);
+      // Update local settings with response data if available
+      if (response.data && response.data.data && response.data.data.settings) {
+        setSettings(response.data.data.settings);
+      }
+      
+      setSuccess(`${section.charAt(0).toUpperCase() + section.slice(1).replace(/([A-Z])/g, ' $1')} updated successfully!`);
+      setEditMode({
+        ...editMode,
+        [section]: false
+      });
+      
+      // Fetch updated settings to ensure we have the latest data
+      setTimeout(async () => {
+        try {
+          const refreshResponse = await axios.get(`${apiUrl}/api/v1/settings`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (refreshResponse.data?.data?.settings) {
+            setSettings(refreshResponse.data.data.settings);
+          }
+        } catch (refreshErr) {
+          console.error('Error refreshing settings:', refreshErr);
+        }
       }, 500);
       
     } catch (err) {
       console.error('Error updating settings:', err);
       setError('Failed to update settings');
+    } finally {
       setLoading(false);
     }
     
     // Clear success message after 3 seconds
-    if (success) {
-      setTimeout(() => {
-        setSuccess(null);
-      }, 3000);
-    }
+    setTimeout(() => {
+      setSuccess(null);
+    }, 3000);
   };
 
   return (

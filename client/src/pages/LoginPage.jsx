@@ -154,9 +154,9 @@ const LoginPage = () => {
                     Password
                   </label>
                   <div className="text-sm">
-                    <a href="#" className="font-medium text-[#f97316] hover:text-[#fb923c] transition-colors">
+                    <Link to="/forgot-password" className="font-medium text-[#f97316] hover:text-[#fb923c] transition-colors">
                       Forgot?
-                    </a>
+                    </Link>
                   </div>
                 </div>
                 <div className="mt-1 relative rounded-xl shadow-sm">
@@ -210,14 +210,14 @@ const LoginPage = () => {
           </div>
         </div>
         
-        <div className="mt-6 text-center">
+        {/* <div className="mt-6 text-center">
           <p className="text-sm text-gray-400">
             Don't have an account?{' '}
             <Link to="/signup" className="font-medium text-[#f97316] hover:text-[#fb923c] transition-colors">
               Create account
             </Link>
           </p>
-        </div>
+        </div> */}
         
         <div className="mt-8 text-center">
           <Link to="/" className="inline-flex items-center text-sm text-gray-400 hover:text-white transition-colors">
