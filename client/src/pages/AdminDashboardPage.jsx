@@ -83,7 +83,7 @@ function AdminDashboardPage() {
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-30 w-64 bg-blue-800 text-white transform transition duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-center h-16 border-b border-blue-700">
-          <h2 className="text-2xl font-bold">HR Admin</h2>
+          <h2 className="text-2xl font-bold">PF Admin</h2>
         </div>
         <nav className="mt-5">
           <button 

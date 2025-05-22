@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
+const apiUrl = import.meta.env.VITE_API_URL
 function LeaveRequestForm({ onLeaveSubmitted }) {
   const [leaveType, setLeaveType] = useState('sick');
   const [startDate, setStartDate] = useState(dayjs().add(1, 'day').format('YYYY-MM-DD'));
@@ -49,6 +50,7 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
     // Fetch real data from the server
     fetchLeaveBalance();
     fetchCompOffDates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchLeaveBalance = async () => {
@@ -80,7 +82,8 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
 
   const fetchCompOffDates = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/v1/attendance/compoff-dates', {
+      // FIX: Use the correct API endpoint for comp off dates
+      const response = await axios.get(`${apiUrl}/api/v1/leaves/compoff-dates`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { 
           startDate: financialYear.start,

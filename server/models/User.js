@@ -57,7 +57,13 @@ const userSchema = new mongoose.Schema({
   state: { type: String },
   country: { type: String },
   postalCode: { type: String },
-  manager: { type: String }
+  manager: { type: String },
+  compOffDates: [
+    {
+      date: { type: Date, required: true },
+      used: { type: Boolean, default: false }
+    }
+  ]
 }, {
   timestamps: true
 });

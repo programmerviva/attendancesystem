@@ -261,10 +261,10 @@ function EmployeeDashboardPage() {
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">Employee Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900"> <span className='text-[#ea590c]'>{user?.fullName?.first}</span>  Dashboard</h1>
           <div className="flex items-center">
             <span className="mr-4 text-gray-700">
-              Welcome, {user?.fullName?.first || 'Employee'}
+              Welcome, <span className='text-blue-600 font-semibold'>{user?.fullName?.first || 'Employee'} {user?.fullName?.last}</span>
             </span>
             <button 
               onClick={() => {
@@ -335,6 +335,7 @@ function EmployeeDashboardPage() {
                 <p className="text-sm text-gray-600">City: {user?.city || '-'}</p>
                 <p className="text-sm text-gray-600">State: {user?.state || '-'}</p>
                 <p className="text-sm text-gray-600">Country: {user?.country || '-'}</p>
+                
                 <p className="text-sm text-gray-600">Postal Code: {user?.postalCode || '-'}</p>
               </div>
               <div className="mt-5">
