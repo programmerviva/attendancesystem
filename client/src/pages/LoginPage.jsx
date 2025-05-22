@@ -5,7 +5,7 @@ import axios from 'axios';
 const apiUrl = import.meta.env.VITE_API_URL
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(''); // For admin login
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -46,10 +46,14 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${apiUrl}/api/v1/auth/login`, {
-        email,
-        password
-      });
+      let payload = {};
+      // If admin (email contains '@'), send email, else userId
+      if (email.includes('@')) {
+        payload = { email, password };
+      } else {
+        payload = { userId: email, password };
+      }
+      const response = await axios.post(`${apiUrl}/api/v1/auth/login`, payload);
 
       const data = response.data;
       
@@ -125,25 +129,24 @@ const LoginPage = () => {
               
               <div className="space-y-1">
                 <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-                  Email Address
+                  Email (Admin) / User ID (Employee)
                 </label>
                 <div className="mt-1 relative rounded-xl shadow-sm">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <input
                     id="email"
                     name="email"
-                    type="email"
-                    autoComplete="email"
+                    type="text"
+                    autoComplete="username"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="bg-white/5 border border-white/10 text-white block w-full pl-10 pr-3 py-3.5 rounded-xl focus:ring-2 focus:ring-[#f97316] focus:border-transparent outline-none transition-all duration-300"
-                    placeholder="you@example.com"
+                    placeholder="Email (admin) or PFuserId (employee)"
                   />
                 </div>
               </div>

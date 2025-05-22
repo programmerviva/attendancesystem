@@ -18,6 +18,11 @@ const adminSchema = new mongoose.Schema({
     unique: true,
     lowercase: true
   },
+  userId: {
+    type: String,
+    required: [true, 'User ID is required'],
+    unique: true
+  },
   password: {
     type: String,
     required: [true, 'Password is required'],

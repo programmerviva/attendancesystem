@@ -23,6 +23,7 @@ export const getEmployeeDashboard = async (req, res, next) => {
       data: {
         employee: {
           id: employee._id,
+          userId: employee.userId,
           empId: employee.empId,
           name: `${employee.fullName.first} ${employee.fullName.last}`,
           email: employee.email,
@@ -52,6 +53,7 @@ export const getEmployeeProfile = async (req, res, next) => {
       data: {
         profile: {
           id: employee._id,
+          userId: employee.userId,
           empId: employee.empId,
           fullName: employee.fullName,
           email: employee.email,
@@ -94,6 +96,7 @@ export const updateEmployeeProfile = async (req, res, next) => {
       data: {
         employee: {
           id: updatedEmployee._id,
+          userId: updatedEmployee.userId,
           empId: updatedEmployee.empId,
           fullName: updatedEmployee.fullName,
           email: updatedEmployee.email,

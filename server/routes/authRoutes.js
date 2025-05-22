@@ -1,16 +1,31 @@
 import express from 'express';
-import * as authController from '../controllers/authController.js';
+import { 
+  register, 
+  login, 
+  forgotPassword, 
+  resetPassword, 
+  updatePassword,
+  protect,
+  restrictTo,
+  checkEmail,
+  directReset
+} from '../controllers/authController.js';
 
 const router = express.Router();
 
-router.post('/register', authController.register);
-router.post('/login', authController.login);
-router.post('/forgot-password', authController.forgotPassword);
-router.patch('/reset-password/:token', authController.resetPassword);
-router.patch('/update-password', authController.protect, authController.updatePassword);
+// Public routes
+router.post('/register', register);
+router.post('/login', login);
+router.post('/forgotPassword', forgotPassword);
+router.post('/resetPassword/:token', resetPassword);
+router.post('/checkEmail', checkEmail);
 
-// New routes for direct password reset
-router.post('/check-email', authController.checkEmail);
-router.post('/direct-reset', authController.directReset);
+// Protected routes
+router.use(protect);
+router.post('/updatePassword', updatePassword);
+
+// Admin only routes
+router.use(restrictTo('admin'));
+router.post('/directReset', directReset);
 
 export default router;

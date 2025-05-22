@@ -63,31 +63,42 @@ export const register = async (req, res, next) => {
 // Login user
 export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, userId, password } = req.body;
     
-    // Check if email and password exist
-    if (!email || !password) {
-      return next(new AppError('Please provide email and password', 400));
+    // Check if either email or userId is provided along with password
+    if ((!email && !userId) || !password) {
+      return next(new AppError('Please provide email/userId and password', 400));
     }
     
-    // First check if it's an admin login
-    const admin = await Admin.findOne({ email }).select('+password');
-    
-    if (admin) {
-      // Compare passwords directly using bcrypt
-      const isPasswordCorrect = await bcrypt.compare(password, admin.password);
+    // First check if it's an admin login (admins still use email)
+    if (email) {
+      const admin = await Admin.findOne({ email }).select('+password');
       
-      if (isPasswordCorrect) {
-        // Admin login successful
-        return createSendToken(admin, 200, res, true);
+      if (admin) {
+        // Compare passwords directly using bcrypt
+        const isPasswordCorrect = await bcrypt.compare(password, admin.password);
+        
+        if (isPasswordCorrect) {
+          // Admin login successful
+          return createSendToken(admin, 200, res, true);
+        }
       }
     }
     
     // If not admin, check regular user
-    const user = await User.findOne({ email }).select('+password');
+    let user;
+    
+    if (userId) {
+      // If userId is provided, check if it has PF prefix
+      const searchUserId = userId.startsWith('PF') ? userId.substring(2) : userId;
+      user = await User.findOne({ userId: searchUserId }).select('+password');
+    } else if (email) {
+      // If email is provided
+      user = await User.findOne({ email }).select('+password');
+    }
     
     if (!user || !(await user.correctPassword(password, user.password))) {
-      return next(new AppError('Incorrect email or password', 401));
+      return next(new AppError('Incorrect credentials', 401));
     }
     
     // User login successful

@@ -9,6 +9,7 @@ async function fixAdminLogin() {
     const mongoURI = process.env.MONGODB_URI;
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const adminUserId = process.env.ADMIN_USERID || 'Admin1';
 
     if (!mongoURI) {
       console.error('MONGODB_URI not found in .env file.');
@@ -18,66 +19,51 @@ async function fixAdminLogin() {
     await mongoose.connect(mongoURI);
     console.log('MongoDB connected for fixing admin login.');
 
-    // Check if admin exists in admins collection
+    // Find admin directly in the collection to bypass middleware
     const adminCollection = mongoose.connection.collection('admins');
+    
+    // Find admin by email
     const admin = await adminCollection.findOne({ email: adminEmail });
 
-    if (admin) {
-      console.log(`Found admin with email ${adminEmail} in admins collection.`);
-      
-      // Hash the password
-      const hashedPassword = await bcrypt.hash(adminPassword, 12);
-      
-      // Update the admin with the new password
-      await adminCollection.updateOne(
-        { email: adminEmail },
-        { 
-          $set: { 
-            password: hashedPassword,
-            passwordChangedAt: new Date()
-          } 
-        }
-      );
-      
-      console.log('Admin password updated successfully.');
-    } else {
+    if (!admin) {
       console.log(`No admin found with email ${adminEmail}. Creating new admin...`);
       
-      // Hash the password
+      // Hash password manually
       const hashedPassword = await bcrypt.hash(adminPassword, 12);
       
-      // Create new admin directly in the collection
+      // Create new admin directly in collection
       await adminCollection.insertOne({
         fullName: {
           first: 'Admin',
           last: 'User'
         },
         email: adminEmail,
+        userId: adminUserId,
         password: hashedPassword,
         role: 'admin',
         createdAt: new Date(),
         updatedAt: new Date()
       });
       
-      console.log('New admin created successfully.');
-    }
-
-    // Also check users collection and remove any admin
-    const usersCollection = mongoose.connection.collection('users');
-    const result = await usersCollection.deleteMany({ role: 'admin' });
-    
-    if (result.deletedCount > 0) {
-      console.log(`Removed ${result.deletedCount} admin(s) from users collection.`);
+      console.log(`New admin created with email: ${adminEmail} and userId: ${adminUserId}`);
+    } else {
+      // Reset admin password and add userId if it doesn't exist
+      const hashedPassword = await bcrypt.hash(adminPassword, 12);
+      await adminCollection.updateOne(
+        { email: adminEmail },
+        { 
+          $set: { 
+            password: hashedPassword, 
+            userId: adminUserId,
+            updatedAt: new Date() 
+          } 
+        }
+      );
+      console.log(`Admin updated with email: ${adminEmail} and userId: ${adminUserId}`);
     }
 
     console.log('Admin login fixed successfully.');
-    
-    // Print admin credentials for verification
-    console.log('\nAdmin Credentials:');
-    console.log(`Email: ${adminEmail}`);
-    console.log(`Password: ${adminPassword}`);
-    console.log('\nPlease use these credentials to login.');
-    
+    console.log(`Admin login credentials: userId: ${adminUserId}, Password: ${adminPassword}`);
   } catch (error) {
     console.error('Error fixing admin login:', error);
   } finally {

@@ -1,25 +1,24 @@
 import express from 'express';
-import {
-  getAllUsers,
-  getUser,
-  updateUser,
-  deleteUser,
-  getUserCount
-} from '../controllers/userController.js';
+import { getAllUsers, getUserCount, getUser, createUser, updateUser, deleteUser } from '../controllers/userController.js';
 import { protect, restrictTo } from '../controllers/authController.js';
 
 const router = express.Router();
 
-// Protect all routes
+// Protect all routes after this middleware
 router.use(protect);
 
-// Routes restricted to admin and subadmin
+// Restrict to admin and subadmin
 router.use(restrictTo('admin', 'subadmin'));
 
-router.get('/', getAllUsers);
+router.route('/')
+  .get(getAllUsers)
+  .post(createUser);
+
 router.get('/count', getUserCount);
-router.get('/:id', getUser);
-router.patch('/:id', updateUser);
-router.delete('/:id', deleteUser);
+
+router.route('/:id')
+  .get(getUser)
+  .patch(updateUser)
+  .delete(deleteUser);
 
 export default router;

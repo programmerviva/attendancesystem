@@ -8,8 +8,9 @@ dotenv.config();
 async function createAdminCollection() {
   try {
     const mongoURI = process.env.MONGODB_URI;
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
+    const adminEmail = 'newadmin@example.com'; // Updated email
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const adminUserId = process.env.ADMIN_USERID || 'Admin1';
 
     if (!mongoURI) {
       console.error('MONGODB_URI not found in .env file.');
@@ -24,11 +25,11 @@ async function createAdminCollection() {
 
     if (existingAdmin) {
       console.log(`Admin with email ${adminEmail} already exists in Admin collection.`);
-      
-      // Update password if needed
+      // Update password and userId if needed
       existingAdmin.password = adminPassword;
+      existingAdmin.userId = adminUserId;
       await existingAdmin.save();
-      console.log('Admin password updated.');
+      console.log('Admin password and userId updated.');
     } else {
       // Create new admin in the Admin collection
       const newAdmin = new Admin({
@@ -37,10 +38,10 @@ async function createAdminCollection() {
           last: 'User'
         },
         email: adminEmail,
+        userId: adminUserId,
         password: adminPassword,
         role: 'admin'
       });
-
       await newAdmin.save();
       console.log(`New admin created in Admin collection with email: ${adminEmail}`);
     }
@@ -56,6 +57,7 @@ async function createAdminCollection() {
     }
 
     console.log('Admin collection setup completed successfully.');
+    console.log(`Admin login credentials: Email: ${adminEmail}, Password: ${adminPassword}`);
   } catch (error) {
     console.error('Error creating Admin collection:', error);
   } finally {

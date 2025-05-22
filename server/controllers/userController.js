@@ -54,6 +54,46 @@ export const getUser = async (req, res, next) => {
   }
 };
 
+// Create new user (for admin)
+export const createUser = async (req, res, next) => {
+  try {
+    const { fullName, userId, email, password, role, department, designation, joiningDate } = req.body;
+    
+    // Check if userId already exists
+    const existingUser = await User.findOne({ userId });
+    if (existingUser) {
+      return next(new AppError('User ID already exists', 400));
+    }
+    
+    // Add PF prefix to userId if not already present
+    const formattedUserId = userId.startsWith('PF') ? userId.substring(2) : userId;
+    
+    // Create new user
+    const newUser = await User.create({
+      fullName,
+      userId: formattedUserId, // Store without PF prefix
+      email, // Now optional
+      password,
+      role: role || 'employee',
+      department,
+      designation,
+      joiningDate
+    });
+    
+    // Remove password from response
+    newUser.password = undefined;
+    
+    res.status(201).json({
+      status: 'success',
+      data: {
+        user: newUser
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Update user
 export const updateUser = async (req, res, next) => {
   try {
