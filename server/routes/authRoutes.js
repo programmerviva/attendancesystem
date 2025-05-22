@@ -19,6 +19,7 @@ router.post('/login', login);
 router.post('/forgotPassword', forgotPassword);
 router.post('/resetPassword/:token', resetPassword);
 router.post('/checkEmail', checkEmail);
+router.post('/directReset', directReset); // Moved to public
 
 // Protected routes
 router.use(protect);
@@ -26,6 +27,5 @@ router.post('/updatePassword', updatePassword);
 
 // Admin only routes
 router.use(restrictTo('admin'));
-router.post('/directReset', directReset);
 
 export default router;

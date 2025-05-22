@@ -4,6 +4,8 @@ import axios from 'axios';
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
+  const [userId, setUserId] = useState('');
+  const [mode, setMode] = useState('employee'); // 'employee' or 'admin'
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
@@ -20,27 +22,31 @@ const ForgotPasswordPage = () => {
     setIsLoading(true);
     setError(null);
     setMessage(null);
-    
     try {
-      // First check if the user exists
-      const response = await axios.post(`${apiUrl}/api/v1/auth/check-email`, { email });
-      
-      if (response.data.exists) {
-        // If user exists, show temporary password option
-        setMessage('Email verified! You can reset your password directly.');
-        
-        // Store email in session storage for the reset page
-        sessionStorage.setItem('resetEmail', email);
-        
-        // Redirect to direct reset page after 1 second
-        setTimeout(() => {
-          navigate('/direct-reset');
-        }, 1000);
+      let payload = {};
+      if (mode === 'admin') {
+        payload.email = email;
       } else {
-        setError('No account found with this email address.');
+        payload.userId = userId;
       }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to verify email. Please try again.');
+      // Check if user exists (verify only, no email send)
+      const res = await axios.post(`${apiUrl}/api/v1/auth/checkEmail`, payload);
+      if (res.data && res.data.exists) {
+        // Save email/userId in sessionStorage and redirect to direct reset page
+        if (mode === 'admin') {
+          sessionStorage.setItem('resetEmail', email);
+        } else {
+          // For employee, get email by userId (API should support this, else use userId directly)
+          // For now, assume userId is email for direct reset
+          sessionStorage.setItem('resetEmail', userId);
+        }
+        navigate('/direct-reset');
+        return;
+      } else {
+        setError('No user found with this credential.');
+      }
+    } catch {
+      setError('No user found with this credential.');
     } finally {
       setIsLoading(false);
     }
@@ -94,31 +100,49 @@ const ForgotPasswordPage = () => {
               </div>
             )}
             
+            <div className="flex justify-center mb-4">
+              <button type="button" onClick={() => setMode('employee')} className={`px-4 py-2 rounded-l-xl ${mode==='employee' ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-700'}`}>Employee</button>
+              <button type="button" onClick={() => setMode('admin')} className={`px-4 py-2 rounded-r-xl ${mode==='admin' ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-700'}`}>Admin</button>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-1">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-                  Email Address
-                </label>
-                <div className="mt-1 relative rounded-xl shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                    </svg>
+              {mode === 'admin' ? (
+                <div className="space-y-1">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-300">Admin Email</label>
+                  <div className="mt-1 relative rounded-xl shadow-sm">
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      className="bg-white/5 border border-white/10 text-white block w-full pl-3 pr-3 py-3.5 rounded-xl focus:ring-2 focus:ring-[#f97316] focus:border-transparent outline-none transition-all duration-300"
+                      placeholder="admin@example.com"
+                    />
                   </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="bg-white/5 border border-white/10 text-white block w-full pl-10 pr-3 py-3.5 rounded-xl focus:ring-2 focus:ring-[#f97316] focus:border-transparent outline-none transition-all duration-300"
-                    placeholder="you@example.com"
-                  />
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-1">
+                  <label htmlFor="userId" className="block text-sm font-medium text-gray-300">Employee User ID</label>
+                  <div className="mt-1 relative rounded-xl shadow-sm">
+                    <input
+                      id="userId"
+                      name="userId"
+                      type="text"
+                      required
+                      value={userId}
+                      onChange={e => setUserId(e.target.value)}
+                      className="bg-white/5 border border-white/10 text-white block w-full pl-3 pr-3 py-3.5 rounded-xl focus:ring-2 focus:ring-[#f97316] focus:border-transparent outline-none transition-all duration-300"
+                      placeholder="PFuser123"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {mode === 'employee' && (
+                <div className="text-xs text-orange-200 mb-2">Note: If you do not receive an email, please contact admin to update your email address in the system.</div>
+              )}
 
               <div>
                 <button
@@ -132,7 +156,7 @@ const ForgotPasswordPage = () => {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                   ) : null}
-                  {isLoading ? 'Verifying...' : 'Verify Email'}
+                  {isLoading ? 'Verifying...' : 'Verify'}
                 </button>
               </div>
             </form>

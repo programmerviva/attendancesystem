@@ -68,6 +68,18 @@ export const createUser = async (req, res, next) => {
     // Add PF prefix to userId if not already present
     const formattedUserId = userId.startsWith('PF') ? userId.substring(2) : userId;
     
+    // Auto-generate empId
+    let newEmpId;
+    // Find last empId (numeric only)
+    const lastUser = await User.findOne({ empId: { $ne: null } }).sort({ empId: -1 });
+    if (lastUser && lastUser.empId) {
+      // If empId is numeric, increment, else fallback to 1001
+      const lastEmpIdNum = parseInt(lastUser.empId, 10);
+      newEmpId = isNaN(lastEmpIdNum) ? '1001' : String(lastEmpIdNum + 1);
+    } else {
+      newEmpId = '1001';
+    }
+    
     // Create new user
     const newUser = await User.create({
       fullName,
@@ -77,7 +89,8 @@ export const createUser = async (req, res, next) => {
       role: role || 'employee',
       department,
       designation,
-      joiningDate
+      joiningDate,
+      empId: newEmpId
     });
     
     // Remove password from response

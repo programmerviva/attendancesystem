@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'subadmin', 'employee'],
+    enum: ['admin', 'employee'],
     default: 'employee'
   },
   empId: {
@@ -51,7 +51,13 @@ const userSchema = new mongoose.Schema({
   },
   passwordChangedAt: Date,
   passwordResetToken: String,
-  passwordResetExpires: Date
+  passwordResetExpires: Date,
+  address: { type: String },
+  city: { type: String },
+  state: { type: String },
+  country: { type: String },
+  postalCode: { type: String },
+  manager: { type: String }
 }, {
   timestamps: true
 });

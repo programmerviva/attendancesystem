@@ -73,20 +73,45 @@ export const getEmployeeProfile = async (req, res, next) => {
 // Update employee profile
 export const updateEmployeeProfile = async (req, res, next) => {
   try {
-    const { mobile, profileImage } = req.body;
-    
-    // Only allow updating certain fields
+    // Accept all editable fields from the request body
+    const allowedFields = [
+      'mobile', 'profileImage', 'address', 'city', 'state', 'country', 'postalCode',
+      'department', 'designation', 'joiningDate', 'manager', 'email'
+    ];
     const updateData = {};
-    if (mobile) updateData.mobile = mobile;
-    if (profileImage) updateData.profileImage = profileImage;
+    for (const field of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        updateData[field] = req.body[field];
+      }
+    }
     
+    // Convert dates to start of day for accurate comparison
+    if (updateData.joiningDate) {
+      const joiningDate = new Date(updateData.joiningDate);
+      joiningDate.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      updateData.joiningDate = joiningDate; // Store the clean date
+    }
+
+    // Prevent future joining date
+    if (updateData.joiningDate) {
+      const joiningDate = new Date(updateData.joiningDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (joiningDate > today) {
+        return next(new AppError(`Joining date cannot be in the future. Received: ${updateData.joiningDate}`, 400));
+      }
+    }
+
     // Find and update the employee
     const updatedEmployee = await User.findByIdAndUpdate(
       req.user._id,
       updateData,
       { new: true, runValidators: true }
     );
-    
+
     if (!updatedEmployee) {
       return next(new AppError('Employee not found', 404));
     }
@@ -101,7 +126,16 @@ export const updateEmployeeProfile = async (req, res, next) => {
           fullName: updatedEmployee.fullName,
           email: updatedEmployee.email,
           mobile: updatedEmployee.mobile,
-          profileImage: updatedEmployee.profileImage || '',
+          department: updatedEmployee.department,
+          designation: updatedEmployee.designation,
+          joiningDate: updatedEmployee.joiningDate,
+          address: updatedEmployee.address,
+          city: updatedEmployee.city,
+          state: updatedEmployee.state,
+          country: updatedEmployee.country,
+          postalCode: updatedEmployee.postalCode,
+          manager: updatedEmployee.manager,
+          profileImage: updatedEmployee.profileImage || ''
         }
       }
     });

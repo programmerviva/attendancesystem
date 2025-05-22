@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import EmployeeHolidayCalendar from '../components/EmployeeHolidayCalendar';
+import MyProfile from '../components/MyProfile';
 
 const apiUrl = import.meta.env.VITE_API_URL
 
@@ -25,6 +26,7 @@ function EmployeeDashboardPage() {
   const [monthlyAttendance, setMonthlyAttendance] = useState([]);
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('attendance');
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
@@ -247,6 +249,13 @@ function EmployeeDashboardPage() {
     );
   }
 
+  // Update user in local state and localStorage after profile update
+  const handleProfileUpdated = (updated) => {
+    const updatedUser = { ...user, ...updated, fullName: updated.fullName || user.fullName };
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
@@ -325,6 +334,7 @@ function EmployeeDashboardPage() {
               <div className="mt-5">
                 <button 
                   className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium w-full"
+                  onClick={() => setShowProfileModal(true)}
                 >
                   Edit Profile
                 </button>
@@ -532,6 +542,14 @@ function EmployeeDashboardPage() {
             </div>
           </div>
         </div>
+
+        {showProfileModal && (
+          <MyProfile 
+            user={user} 
+            onClose={() => setShowProfileModal(false)} 
+            onProfileUpdated={handleProfileUpdated}
+          />
+        )}
       </main>
     </div>
   );

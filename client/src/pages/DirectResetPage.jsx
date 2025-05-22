@@ -39,8 +39,10 @@ const DirectResetPage = () => {
     setMessage(null);
     
     try {
-      await axios.post(`${apiUrl}/api/v1/auth/direct-reset`, {
-        email,
+      await axios.post(`${apiUrl}/api/v1/auth/directReset`, {
+        // If email looks like an email, send as email, else treat as userId
+        email: email.includes('@') ? email : undefined,
+        userId: email.includes('@') ? undefined : email,
         password,
         confirmPassword
       });

@@ -169,48 +169,56 @@ export const restrictTo = (...roles) => {
 // Forgot password
 export const forgotPassword = async (req, res, next) => {
   try {
-    // 1) Get user based on POSTed email
-    const user = await User.findOne({ email: req.body.email });
-    if (!user) {
-      return next(new AppError('There is no user with that email address.', 404));
+    const { email, userId } = req.body;
+    let user = null;
+    let admin = null;
+    if (email) {
+      admin = await Admin.findOne({ email });
     }
-    
+    if (userId) {
+      // Remove PF prefix if present
+      const searchUserId = userId.startsWith('PF') ? userId.substring(2) : userId;
+      user = await User.findOne({ userId: searchUserId });
+    } else if (email && !admin) {
+      // If not admin, try user by email
+      user = await User.findOne({ email });
+    }
+    if (!user && !admin) {
+      return next(new AppError('No user found with that email or userId.', 404));
+    }
+    // Use user or admin for reset
+    const account = user || admin;
     // 2) Generate the random reset token
-    const resetToken = user.createPasswordResetToken();
-    await user.save({ validateBeforeSave: false });
-    
+    if (!account.createPasswordResetToken) {
+      return next(new AppError('Password reset not supported for this account.', 400));
+    }
+    const resetToken = account.createPasswordResetToken();
+    await account.save({ validateBeforeSave: false });
     // 3) Send it to user's email
-    // Use client URL from environment or fallback to a default
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const resetURL = `${clientUrl}/reset-password/${resetToken}`;
-    
     const message = `Forgot your password? Click the link below to reset your password: ${resetURL}\n\nIf you didn't forget your password, please ignore this email!`;
-    
     try {
+      const emailToSend = account.email;
       const emailSent = await sendEmail({
-        email: user.email,
+        email: emailToSend,
         subject: 'Your password reset token (valid for 10 min)',
         message
       });
-      
       if (!emailSent) {
-        // If email sending failed but didn't throw an error
-        user.passwordResetToken = undefined;
-        user.passwordResetExpires = undefined;
-        await user.save({ validateBeforeSave: false });
-        
+        account.passwordResetToken = undefined;
+        account.passwordResetExpires = undefined;
+        await account.save({ validateBeforeSave: false });
         return next(new AppError('There was an error sending the email. Try again later!', 500));
       }
-      
       res.status(200).json({
         status: 'success',
         message: 'Token sent to email!'
       });
     } catch (err) {
-      user.passwordResetToken = undefined;
-      user.passwordResetExpires = undefined;
-      await user.save({ validateBeforeSave: false });
-      
+      account.passwordResetToken = undefined;
+      account.passwordResetExpires = undefined;
+      await account.save({ validateBeforeSave: false });
       return next(new AppError('There was an error sending the email. Try again later!', 500));
     }
   } catch (err) {
@@ -283,16 +291,20 @@ export const updatePassword = async (req, res, next) => {
 // Check if email exists
 export const checkEmail = async (req, res, next) => {
   try {
-    const { email } = req.body;
-    
-    if (!email) {
-      return next(new AppError('Please provide an email', 400));
+    const { email, userId } = req.body;
+    let user = null;
+    let admin = null;
+    if (email) {
+      admin = await Admin.findOne({ email });
     }
-    
-    // Check both User and Admin collections
-    const user = await User.findOne({ email });
-    const admin = await Admin.findOne({ email });
-    
+    if (userId) {
+      // Remove PF prefix if present
+      const searchUserId = userId.startsWith('PF') ? userId.substring(2) : userId;
+      user = await User.findOne({ userId: searchUserId });
+    } else if (email && !admin) {
+      // If not admin, try user by email
+      user = await User.findOne({ email });
+    }
     res.status(200).json({
       status: 'success',
       exists: !!(user || admin)
@@ -305,30 +317,33 @@ export const checkEmail = async (req, res, next) => {
 // Direct password reset (without token)
 export const directReset = async (req, res, next) => {
   try {
-    const { email, password, confirmPassword } = req.body;
-    
+    const { email, userId, password, confirmPassword } = req.body;
     // Check if passwords match
     if (password !== confirmPassword) {
       return next(new AppError('Passwords do not match', 400));
     }
-    
-    // Find user by email
-    const user = await User.findOne({ email });
-    const admin = await Admin.findOne({ email });
-    
-    if (!user && !admin) {
-      return next(new AppError('No user found with that email address', 404));
+    let user = null;
+    let admin = null;
+    if (email) {
+      admin = await Admin.findOne({ email });
+      user = await User.findOne({ email });
     }
-    
+    if (userId) {
+      // Remove PF prefix if present
+      const searchUserId = userId.startsWith('PF') ? userId.substring(2) : userId;
+      user = await User.findOne({ userId: searchUserId });
+    }
+    if (!user && !admin) {
+      return next(new AppError('No user found with that email address or userId', 404));
+    }
     // Update password for the found account
     if (user) {
       user.password = password;
       await user.save();
-    } else {
+    } else if (admin) {
       admin.password = password;
       await admin.save();
     }
-    
     res.status(200).json({
       status: 'success',
       message: 'Password has been reset successfully'

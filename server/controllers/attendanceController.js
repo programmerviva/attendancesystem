@@ -92,6 +92,22 @@ export const createAttendance = async (req, res, next) => {
       const checkOutTime = dayjs(time);
       const workHours = checkOutTime.diff(checkInTime, 'hour', true).toFixed(2);
       attendance.workHours = workHours;
+
+      // Calculate and set status based on work hours
+      if (attendance.checkIn && attendance.checkIn.time && attendance.checkOut && attendance.checkOut.time) {
+        const checkIn = new Date(attendance.checkIn.time);
+        const checkOut = new Date(attendance.checkOut.time);
+        const diffMs = checkOut - checkIn;
+        const diffHrs = diffMs / (1000 * 60 * 60);
+        attendance.workHours = parseFloat(diffHrs.toFixed(2));
+        if (attendance.workHours >= 8) {
+          attendance.status = 'present';
+        } else if (attendance.workHours >= 4) {
+          attendance.status = 'half-day';
+        } else {
+          attendance.status = 'absent';
+        }
+      }
     }
     
     await attendance.save();
