@@ -6,6 +6,7 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import EmployeeHolidayCalendar from '../components/EmployeeHolidayCalendar';
 import MyProfile from '../components/MyProfile';
+ 
 
 const apiUrl = import.meta.env.VITE_API_URL
 
@@ -255,7 +256,7 @@ function EmployeeDashboardPage() {
     setUser(updatedUser);
     localStorage.setItem('user', JSON.stringify(updatedUser));
   };
-
+ 
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
@@ -328,8 +329,13 @@ function EmployeeDashboardPage() {
                 <p className="text-sm text-gray-600">Email: {user?.email}</p>
                 <p className="text-sm text-gray-600">Department: {user?.department}</p>
                 <p className="text-sm text-gray-600">Designation: {user?.designation}</p>
-                <p className="text-sm text-gray-600">Employee ID: {user?.empId || 'Not assigned'}</p>
+                {/* <p className="text-sm text-gray-600">Employee ID: {user?.empId || 'Not assigned'}</p> */}
                 <p className="text-sm text-gray-600">Joining Date: {user?.joiningDate ? formatDate(user.joiningDate) : 'Not available'}</p>
+                <p className="text-sm text-gray-600">Address: {user?.address || '-'}</p>
+                <p className="text-sm text-gray-600">City: {user?.city || '-'}</p>
+                <p className="text-sm text-gray-600">State: {user?.state || '-'}</p>
+                <p className="text-sm text-gray-600">Country: {user?.country || '-'}</p>
+                <p className="text-sm text-gray-600">Postal Code: {user?.postalCode || '-'}</p>
               </div>
               <div className="mt-5">
                 <button 
@@ -553,6 +559,8 @@ function EmployeeDashboardPage() {
       </main>
     </div>
   );
+
+
 }
 
 export default EmployeeDashboardPage;
