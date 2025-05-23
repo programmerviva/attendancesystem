@@ -281,74 +281,141 @@ function EmployeeDashboardPage() {
       </header>
       
       <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 h-auto">
           {/* Attendance Card */}
-          <div className="bg-white overflow-hidden shadow-lg rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg font-medium text-gray-900">Today's Attendance</h3>
-              <div className="mt-5">
-                {todayAttendance ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Check-In</p>
-                      <p className="text-xl font-semibold text-gray-800">
-                        {todayAttendance.checkIn?.time ? formatTime(todayAttendance.checkIn.time) : 'Not checked in'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Check-Out</p>
-                      <p className="text-xl font-semibold text-gray-800">
-                        {todayAttendance.checkOut?.time ? formatTime(todayAttendance.checkOut.time) : 'Not checked out'}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <p className="text-gray-500">No attendance record for today</p>
-                  </div>
-                )}
-                <div className="mt-5">
-                  <button 
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium w-full"
-                    onClick={() => navigate('/attendance')}
-                  >
-                    {!todayAttendance?.checkIn ? 'Check In' : 
-                     !todayAttendance?.checkOut ? 'Check Out' : 'View Attendance'}
-                  </button>
-                </div>
-              </div>
-            </div>
+          <div className="bg-[#ffffff] overflow-hidden shadow-xl rounded-2xl h-full transition-all duration-300 hover:shadow-2xl">
+  <div className="px-6 py-6 sm:p-8">
+    <h3 className="text-3xl font-semibold mt-1 text-gray-800 border-b pb-3">📅 Today's Attendance</h3>
+
+    <div className="mt-6">
+      {todayAttendance ? (
+        <div className="grid grid-cols-2 gap-6 text-center">
+          <div className="p-4 bg-blue-50 rounded-lg shadow-inner hover:bg-blue-100 transition">
+            <p className="text-sm font-medium text-gray-500">Check-In</p>
+            <p className="text-xl font-semibold text-blue-700 mt-1">
+              {todayAttendance.checkIn?.time ? formatTime(todayAttendance.checkIn.time) : 'Not checked in'}
+            </p>
           </div>
-          
-          {/* Profile Card */}
-          <div className="bg-white overflow-hidden shadow-lg rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg font-medium text-gray-900">My Profile</h3>
-              <div className="mt-3">
-                <p className="text-sm text-gray-600">Name: {user?.fullName?.first} {user?.fullName?.last}</p>
-                <p className="text-sm text-gray-600">Email: {user?.email}</p>
-                <p className="text-sm text-gray-600">Department: {user?.department}</p>
-                <p className="text-sm text-gray-600">Designation: {user?.designation}</p>
-                {/* <p className="text-sm text-gray-600">Employee ID: {user?.empId || 'Not assigned'}</p> */}
-                <p className="text-sm text-gray-600">Joining Date: {user?.joiningDate ? formatDate(user.joiningDate) : 'Not available'}</p>
-                <p className="text-sm text-gray-600">Address: {user?.address || '-'}</p>
-                <p className="text-sm text-gray-600">City: {user?.city || '-'}</p>
-                <p className="text-sm text-gray-600">State: {user?.state || '-'}</p>
-                <p className="text-sm text-gray-600">Country: {user?.country || '-'}</p>
-                
-                <p className="text-sm text-gray-600">Postal Code: {user?.postalCode || '-'}</p>
-              </div>
-              <div className="mt-5">
-                <button 
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium w-full"
-                  onClick={() => setShowProfileModal(true)}
-                >
-                  Edit Profile
-                </button>
-              </div>
-            </div>
+
+          <div className="p-4 bg-green-50 rounded-lg shadow-inner hover:bg-green-100 transition">
+            <p className="text-sm font-medium text-gray-500">Check-Out</p>
+            <p className="text-xl font-semibold text-green-700 mt-1">
+              {todayAttendance.checkOut?.time ? formatTime(todayAttendance.checkOut.time) : 'Not checked out'}
+            </p>
           </div>
         </div>
+      ) : (
+        <div className="text-center py-8">
+          <p className="text-gray-500 text-sm">No attendance record for today</p>
+        </div>
+      )}
+    </div>
+
+    <div className="mt-[115px] text-center space-y-4">
+  {/* Motivational/Informational Quotes Based on Attendance State */}
+  {!todayAttendance?.checkIn ? (
+    <p className="text-gray-500 text-sm text-[16px]">
+      "Every new day is a fresh start. Let’s make it productive!" 🌞
+    </p>
+  ) : !todayAttendance?.checkOut ? (
+    <p className="text-gray-500 font-sm text-[16px]">
+      "Great job showing up! Now finish strong and check out when you're done." 💪
+    </p>
+  ) : (
+    <p className="text-blue-700 italic text-[16px]">
+      "You've completed today's journey. See your performance below!" 🚀
+    </p>
+  )}
+
+  {/* Button */}
+  <button
+    className="w-full mt-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold tracking-wide rounded-lg shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200"
+    onClick={() => navigate('/attendance')}
+  >
+    {!todayAttendance?.checkIn
+      ? 'Check In'
+      : !todayAttendance?.checkOut
+      ? 'Check Out'
+      : 'View Attendance'}
+  </button>
+</div>
+
+  </div>
+</div>
+
+          
+          {/* Profile Card */}
+         
+          <div className="px-6 py-8 sm:p-10 bg-[#ffffff] shadow-xl rounded-2xl transition-all duration-300 hover:shadow-2xl">
+  <h3 className="text-3xl font-bold text-purple-700 mb-4 border-b border-gray-800 pb-2 flex items-center gap-2">
+    <span className="text-3xl mb-1">👤</span> My Profile
+  </h3>
+
+  <div className="space-y-2 text-[16px] text-gray-800 leading-relaxed tracking-wide">
+    <p>
+      <span className="font-semibold text-gray-900 inline-block w-40">Name:</span>
+      <span className="text-blue-900">{user?.fullName?.first} {user?.fullName?.last}</span>
+    </p>
+    {/* <p>
+      <span className="font-semibold text-gray-900 inline-block w-40">Email:</span>
+      <span className="text-blue-900">{user?.email}</span>
+    </p> */}
+    <p>
+      <span className="font-semibold text-gray-900 inline-block w-40">Department:</span>
+      <span className="text-blue-900">{user?.department}</span>
+    </p>
+    <p>
+      <span className="font-semibold text-gray-900 inline-block w-40">Designation:</span>
+      <span className="text-blue-900">{user?.designation}</span>
+    </p>
+    <p>
+      <span className="font-semibold text-gray-900 inline-block w-40">Joining Date:</span>
+      <span className="text-blue-900">
+        {user?.joiningDate ? formatDate(user.joiningDate) : 'Not available'}
+      </span>
+    </p>
+    <p>
+      <span className="font-semibold text-gray-900 inline-block w-40">Address:</span>
+      <span className="text-blue-900">{user?.address || '-'}</span>
+    </p>
+    <p>
+      <span className="font-semibold text-gray-900 inline-block w-40">City:</span>
+      <span className="text-blue-900">{user?.city || '-'}</span>
+    </p>
+    <p>
+      <span className="font-semibold text-gray-900 inline-block w-40">State:</span>
+      <span className="text-blue-900">{user?.state || '-'}</span>
+    </p>
+    <p>
+      <span className="font-semibold text-gray-900 inline-block w-40">Country:</span>
+      <span className="text-blue-900">{user?.country || '-'}</span>
+    </p>
+    <p>
+      <span className="font-semibold text-gray-900 inline-block w-40">Postal Code:</span>
+      <span className="text-blue-900">{user?.postalCode || '-'}</span>
+    </p>
+  </div>
+
+  {/* Uncomment to enable Edit Profile button */}
+  {/*
+  <div className="mt-8">
+    <button
+      className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:scale-105 hover:shadow-xl transition duration-200"
+      onClick={() => setShowProfileModal(true)}
+    >
+      Edit Profile
+    </button>
+  </div>
+  */}
+</div>
+
+ 
+
+          
+        </div>
+      
 
         {/* Tabs */}
         <div className="mb-6 border-b border-gray-200">
@@ -505,7 +572,7 @@ function EmployeeDashboardPage() {
         )}
 
         {/* Quick Actions */}
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div className="bg-white mt-5 shadow-lg rounded-lg overflow-hidden">
           <div className="px-4 py-5 sm:px-6 bg-gradient-to-r from-gray-700 to-gray-800">
             <h3 className="text-lg leading-6 font-medium text-white">Quick Actions</h3>
           </div>
@@ -513,7 +580,7 @@ function EmployeeDashboardPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <button
                 onClick={() => navigate('/attendance')}
-                className="flex flex-col items-center justify-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                className="flex flex-col items-center justify-center p-4 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -538,13 +605,16 @@ function EmployeeDashboardPage() {
                 </svg>
                 <span className="text-sm font-medium text-gray-700">View Reports</span>
               </button>
-              <button
+              <button  
+              onClick={() => setShowProfileModal(true)}
                 className="flex flex-col items-center justify-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-yellow-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span className="text-sm font-medium text-gray-700">My Profile</span>
+                <span className="text-sm font-medium text-gray-700">My Profile
+                  
+                </span>
               </button>
             </div>
           </div>
