@@ -24,7 +24,7 @@ function HomePage() {
           <div className={`text-center transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
             <h1 className="text-4xl md:text-6xl lg:text-8xl font-extrabold text-white mb-6 tracking-tighter leading-tight">
               Welcome to <span className="text-[#f97316] inline-block relative">
-                PeckForce
+                PeakForce
                 <span className="absolute -bottom-2 left-0 w-full h-1.5 bg-[#f97316] rounded-full opacity-70"></span>
               </span>
             </h1>
@@ -51,7 +51,7 @@ function HomePage() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-center items-center">
             <p className="text-gray-500 text-sm md:text-base">
-              © {new Date().getFullYear()} PeckForce. All rights reserved.
+              © {new Date().getFullYear()} PeakForce. All rights reserved.
             </p>
           </div>
         </div>
