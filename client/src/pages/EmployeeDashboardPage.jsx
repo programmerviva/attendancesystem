@@ -377,7 +377,8 @@ function EmployeeDashboardPage() {
 
           <div className="px-6 py-8 sm:p-10 bg-[#ffffff] shadow-xl rounded-2xl transition-all duration-300 hover:shadow-2xl">
             <h3 className="text-3xl font-bold text-purple-700 mb-4 border-b border-gray-800 pb-2 flex items-center gap-2">
-              <span className="text-3xl mb-1">👤</span> My Profile
+              <span className="text-3xl mb-1">👤</span>
+              {user?.fullName?.first} Profile
             </h3>
 
             <div className="space-y-2 text-[16px] text-gray-800 leading-relaxed tracking-wide">
