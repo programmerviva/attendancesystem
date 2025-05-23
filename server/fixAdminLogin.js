@@ -21,42 +21,42 @@ async function fixAdminLogin() {
 
     // Find admin directly in the collection to bypass middleware
     const adminCollection = mongoose.connection.collection('admins');
-    
+
     // Find admin by email
     const admin = await adminCollection.findOne({ email: adminEmail });
 
     if (!admin) {
       console.log(`No admin found with email ${adminEmail}. Creating new admin...`);
-      
+
       // Hash password manually
       const hashedPassword = await bcrypt.hash(adminPassword, 12);
-      
+
       // Create new admin directly in collection
       await adminCollection.insertOne({
         fullName: {
           first: 'Admin',
-          last: 'User'
+          last: 'User',
         },
         email: adminEmail,
         userId: adminUserId,
         password: hashedPassword,
         role: 'admin',
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
-      
+
       console.log(`New admin created with email: ${adminEmail} and userId: ${adminUserId}`);
     } else {
       // Reset admin password and add userId if it doesn't exist
       const hashedPassword = await bcrypt.hash(adminPassword, 12);
       await adminCollection.updateOne(
         { email: adminEmail },
-        { 
-          $set: { 
-            password: hashedPassword, 
+        {
+          $set: {
+            password: hashedPassword,
             userId: adminUserId,
-            updatedAt: new Date() 
-          } 
+            updatedAt: new Date(),
+          },
         }
       );
       console.log(`Admin updated with email: ${adminEmail} and userId: ${adminUserId}`);

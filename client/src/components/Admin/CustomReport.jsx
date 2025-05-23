@@ -2,7 +2,16 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { Bar, Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js';
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -12,14 +21,14 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
 function CustomReport() {
   const [dateRange, setDateRange] = useState({
     startDate: dayjs().subtract(30, 'day').format('YYYY-MM-DD'),
-    endDate: dayjs().format('YYYY-MM-DD')
+    endDate: dayjs().format('YYYY-MM-DD'),
   });
   const [departments, setDepartments] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [filters, setFilters] = useState({
     department: '',
     employee: '',
-    status: ''
+    status: '',
   });
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -33,15 +42,15 @@ function CustomReport() {
     const fetchDepartmentsAndEmployees = async () => {
       try {
         const response = await axios.get(`${apiUrl}/api/v1/users`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         const users = response.data.data.users || [];
-        
+
         // Extract unique departments
-        const uniqueDepartments = [...new Set(users.map(user => user.department))];
+        const uniqueDepartments = [...new Set(users.map((user) => user.department))];
         setDepartments(uniqueDepartments);
-        
+
         // Set all employees
         setEmployees(users);
       } catch (err) {
@@ -56,13 +65,13 @@ function CustomReport() {
   // Filter employees when department changes
   useEffect(() => {
     if (filters.department) {
-      const filteredEmployees = employees.filter(emp => emp.department === filters.department);
+      const filteredEmployees = employees.filter((emp) => emp.department === filters.department);
       if (filteredEmployees.length > 0 && filters.employee) {
         // Check if the currently selected employee is in the filtered list
-        const employeeExists = filteredEmployees.some(emp => emp._id === filters.employee);
+        const employeeExists = filteredEmployees.some((emp) => emp._id === filters.employee);
         if (!employeeExists) {
           // Reset employee selection if not in the filtered department
-          setFilters(prev => ({ ...prev, employee: '' }));
+          setFilters((prev) => ({ ...prev, employee: '' }));
         }
       }
     }
@@ -71,37 +80,37 @@ function CustomReport() {
   const generateReport = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const params = {
         startDate: dateRange.startDate,
-        endDate: dateRange.endDate
+        endDate: dateRange.endDate,
       };
-      
+
       const response = await axios.get(`${apiUrl}/api/v1/attendance/all`, {
         headers: { Authorization: `Bearer ${token}` },
-        params
+        params,
       });
-      
+
       let attendanceData = response.data.data.attendance || [];
-      
+
       // Apply filters
       if (filters.department) {
-        attendanceData = attendanceData.filter(record => 
-          record.user && record.user.department === filters.department
+        attendanceData = attendanceData.filter(
+          (record) => record.user && record.user.department === filters.department
         );
       }
-      
+
       if (filters.employee) {
-        attendanceData = attendanceData.filter(record => 
-          record.user && record.user._id === filters.employee
+        attendanceData = attendanceData.filter(
+          (record) => record.user && record.user._id === filters.employee
         );
       }
-      
+
       if (filters.status) {
-        attendanceData = attendanceData.filter(record => record.status === filters.status);
+        attendanceData = attendanceData.filter((record) => record.status === filters.status);
       }
-      
+
       setReportData(attendanceData);
       setReportGenerated(true);
     } catch (err) {
@@ -142,28 +151,36 @@ function CustomReport() {
 
   const exportToCSV = () => {
     if (reportData.length === 0) return;
-    
-    const headers = ['Employee', 'Department', 'Date', 'Check In', 'Check Out', 'Work Hours', 'Status'];
-    const csvData = reportData.map(record => [
+
+    const headers = [
+      'Employee',
+      'Department',
+      'Date',
+      'Check In',
+      'Check Out',
+      'Work Hours',
+      'Status',
+    ];
+    const csvData = reportData.map((record) => [
       record.user?.fullName?.first + ' ' + record.user?.fullName?.last,
       record.user?.department || '-',
       formatDate(record.date),
       record.checkIn?.time ? formatTime(record.checkIn.time) : '-',
       record.checkOut?.time ? formatTime(record.checkOut.time) : '-',
       record.workHours || '-',
-      record.status
+      record.status,
     ]);
-    
-    const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.join(','))
-    ].join('\n');
-    
+
+    const csvContent = [headers.join(','), ...csvData.map((row) => row.join(','))].join('\n');
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `custom_report_${dateRange.startDate}_to_${dateRange.endDate}.csv`);
+    link.setAttribute(
+      'download',
+      `custom_report_${dateRange.startDate}_to_${dateRange.endDate}.csv`
+    );
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -173,43 +190,45 @@ function CustomReport() {
   // Prepare data for status distribution chart
   const prepareStatusChartData = () => {
     if (!reportData.length) return null;
-    
+
     const statusCounts = {};
-    reportData.forEach(record => {
+    reportData.forEach((record) => {
       statusCounts[record.status] = (statusCounts[record.status] || 0) + 1;
     });
-    
+
     const statusLabels = Object.keys(statusCounts);
     const statusData = Object.values(statusCounts);
-    
+
     const backgroundColors = [
       'rgba(75, 192, 192, 0.6)',
       'rgba(255, 99, 132, 0.6)',
       'rgba(255, 206, 86, 0.6)',
       'rgba(255, 159, 64, 0.6)',
       'rgba(153, 102, 255, 0.6)',
-      'rgba(54, 162, 235, 0.6)'
+      'rgba(54, 162, 235, 0.6)',
     ];
-    
+
     return {
-      labels: statusLabels.map(status => status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')),
+      labels: statusLabels.map(
+        (status) => status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')
+      ),
       datasets: [
         {
           data: statusData,
           backgroundColor: backgroundColors.slice(0, statusLabels.length),
-          borderWidth: 1
-        }
-      ]
+          borderWidth: 1,
+        },
+      ],
     };
   };
 
   // Prepare data for department attendance chart
   const prepareDepartmentChartData = () => {
     if (!reportData.length) return null;
-    
+
     const deptAttendance = {};
-    
-    reportData.forEach(record => {
+
+    reportData.forEach((record) => {
       const dept = record.user?.department || 'Unknown';
       if (!deptAttendance[dept]) {
         deptAttendance[dept] = {
@@ -218,15 +237,15 @@ function CustomReport() {
           late: 0,
           'half-day': 0,
           'early-leave': 0,
-          'on-leave': 0
+          'on-leave': 0,
         };
       }
       deptAttendance[dept][record.status] = (deptAttendance[dept][record.status] || 0) + 1;
     });
-    
+
     const departments = Object.keys(deptAttendance);
     const statuses = ['present', 'absent', 'late', 'half-day', 'early-leave', 'on-leave'];
-    
+
     const datasets = statuses.map((status, index) => {
       const colors = [
         'rgba(75, 192, 192, 0.6)',
@@ -234,19 +253,19 @@ function CustomReport() {
         'rgba(255, 159, 64, 0.6)',
         'rgba(255, 206, 86, 0.6)',
         'rgba(153, 102, 255, 0.6)',
-        'rgba(54, 162, 235, 0.6)'
+        'rgba(54, 162, 235, 0.6)',
       ];
-      
+
       return {
         label: status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' '),
-        data: departments.map(dept => deptAttendance[dept][status] || 0),
-        backgroundColor: colors[index % colors.length]
+        data: departments.map((dept) => deptAttendance[dept][status] || 0),
+        backgroundColor: colors[index % colors.length],
       };
     });
-    
+
     return {
       labels: departments,
-      datasets
+      datasets,
     };
   };
 
@@ -255,13 +274,48 @@ function CustomReport() {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check In</th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check Out</th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Work Hours</th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Employee
+            </th>
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Department
+            </th>
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Date
+            </th>
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Check In
+            </th>
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Check Out
+            </th>
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Work Hours
+            </th>
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Status
+            </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
@@ -271,7 +325,8 @@ function CustomReport() {
                 <div className="flex items-center">
                   <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
                     <span className="text-gray-600 font-medium">
-                      {record.user?.fullName?.first?.charAt(0) || '?'}{record.user?.fullName?.last?.charAt(0) || '?'}
+                      {record.user?.fullName?.first?.charAt(0) || '?'}
+                      {record.user?.fullName?.last?.charAt(0) || '?'}
                     </span>
                   </div>
                   <div className="ml-4">
@@ -300,7 +355,9 @@ function CustomReport() {
                 {record.workHours ? `${record.workHours} hrs` : '-'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(record.status)}`}>
+                <span
+                  className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(record.status)}`}
+                >
                   {record.status.charAt(0).toUpperCase() + record.status.slice(1).replace('-', ' ')}
                 </span>
               </td>
@@ -318,11 +375,13 @@ function CustomReport() {
     <div className="p-6 bg-gray-100 min-h-screen">
       <div className="mb-6 bg-white shadow-md rounded-lg p-4">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Custom Report Filter</h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           {/* Date Range Selection */}
           <div>
-            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+              Start Date
+            </label>
             <input
               type="date"
               id="startDate"
@@ -332,7 +391,9 @@ function CustomReport() {
             />
           </div>
           <div>
-            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+              End Date
+            </label>
             <input
               type="date"
               id="endDate"
@@ -342,11 +403,13 @@ function CustomReport() {
             />
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           {/* Department Filter */}
           <div>
-            <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+            <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
+              Department
+            </label>
             <select
               id="department"
               value={filters.department}
@@ -355,14 +418,18 @@ function CustomReport() {
             >
               <option value="">All Departments</option>
               {departments.map((dept, index) => (
-                <option key={index} value={dept}>{dept}</option>
+                <option key={index} value={dept}>
+                  {dept}
+                </option>
               ))}
             </select>
           </div>
-          
+
           {/* Employee Filter */}
           <div>
-            <label htmlFor="employee" className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+            <label htmlFor="employee" className="block text-sm font-medium text-gray-700 mb-1">
+              Employee
+            </label>
             <select
               id="employee"
               value={filters.employee}
@@ -371,7 +438,7 @@ function CustomReport() {
             >
               <option value="">All Employees</option>
               {employees
-                .filter(emp => !filters.department || emp.department === filters.department)
+                .filter((emp) => !filters.department || emp.department === filters.department)
                 .map((emp) => (
                   <option key={emp._id} value={emp._id}>
                     {emp.fullName.first} {emp.fullName.last}
@@ -379,10 +446,12 @@ function CustomReport() {
                 ))}
             </select>
           </div>
-          
+
           {/* Status Filter */}
           <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Attendance Status</label>
+            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+              Attendance Status
+            </label>
             <select
               id="status"
               value={filters.status}
@@ -399,7 +468,7 @@ function CustomReport() {
             </select>
           </div>
         </div>
-        
+
         <div className="flex justify-end">
           <button
             onClick={generateReport}
@@ -410,14 +479,23 @@ function CustomReport() {
           </button>
         </div>
       </div>
-      
+
       {/* Error Message */}
       {error && (
         <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
           <div className="flex">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              <svg
+                className="h-5 w-5 text-red-400"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             <div className="ml-3">
@@ -426,7 +504,7 @@ function CustomReport() {
           </div>
         </div>
       )}
-      
+
       {/* Report Results */}
       {loading ? (
         <div className="flex justify-center py-8">
@@ -437,45 +515,61 @@ function CustomReport() {
           {reportGenerated && reportData.length > 0 ? (
             <div>
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Report Results ({reportData.length} Records)</h3>
+                <h3 className="text-lg font-medium text-gray-900">
+                  Report Results ({reportData.length} Records)
+                </h3>
                 <button
                   onClick={exportToCSV}
                   className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition-colors flex items-center"
                 >
-                  <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  <svg
+                    className="h-5 w-5 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
                   </svg>
                   Export to CSV
                 </button>
               </div>
-              
+
               {/* Visualizations */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {statusChartData && (
                   <div className="bg-white p-4 rounded-lg shadow">
-                    <h4 className="text-md font-medium text-gray-900 mb-4">Attendance Status Distribution</h4>
+                    <h4 className="text-md font-medium text-gray-900 mb-4">
+                      Attendance Status Distribution
+                    </h4>
                     <div className="h-64">
-                      <Pie 
-                        data={statusChartData} 
+                      <Pie
+                        data={statusChartData}
                         options={{
                           responsive: true,
                           maintainAspectRatio: false,
                           plugins: {
                             legend: {
                               position: 'right',
-                            }
-                          }
+                            },
+                          },
                         }}
                       />
                     </div>
                   </div>
                 )}
-                
+
                 {departmentChartData && departments.length > 1 && (
                   <div className="bg-white p-4 rounded-lg shadow">
-                    <h4 className="text-md font-medium text-gray-900 mb-4">Department-wise Attendance</h4>
+                    <h4 className="text-md font-medium text-gray-900 mb-4">
+                      Department-wise Attendance
+                    </h4>
                     <div className="h-64">
-                      <Bar 
+                      <Bar
                         data={departmentChartData}
                         options={{
                           responsive: true,
@@ -485,24 +579,34 @@ function CustomReport() {
                               stacked: true,
                             },
                             y: {
-                              stacked: true
-                            }
-                          }
+                              stacked: true,
+                            },
+                          },
                         }}
                       />
                     </div>
                   </div>
                 )}
               </div>
-              
+
               <div className="overflow-x-auto bg-white rounded-lg shadow">
                 {renderAttendanceTable()}
               </div>
             </div>
           ) : reportGenerated ? (
             <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1}
+                  d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
               <h3 className="mt-2 text-sm font-medium text-gray-900">No Records Found</h3>
               <p className="mt-1 text-sm text-gray-500">Adjust your filters to see more results.</p>

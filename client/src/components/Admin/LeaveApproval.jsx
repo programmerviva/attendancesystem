@@ -4,7 +4,6 @@ import dayjs from 'dayjs';
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
-
 function LeaveApproval() {
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +22,7 @@ function LeaveApproval() {
       setFilterStatus(storedStatus);
       localStorage.removeItem('selectedLeaveStatus');
     }
-    
+
     fetchLeaveRequests();
   }, []);
 
@@ -36,7 +35,7 @@ function LeaveApproval() {
     setLoading(true);
     try {
       let endpoint = `${apiUrl}/api/v1/leaves/pending`;
-      
+
       if (filterStatus === 'all') {
         endpoint = `${apiUrl}/api/v1/leaves/all`;
       } else if (filterStatus === 'approved') {
@@ -44,17 +43,17 @@ function LeaveApproval() {
       } else if (filterStatus === 'rejected') {
         endpoint = `${apiUrl}/api/v1/leaves/rejected`;
       }
-      
+
       console.log('Fetching leaves from endpoint:', endpoint);
-      
+
       const response = await axios.get(endpoint, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      
+
       console.log('Leave response:', response.data);
-      
+
       setLeaveRequests(response.data.data.leaves || []);
       setError(null);
     } catch (err) {
@@ -71,9 +70,9 @@ function LeaveApproval() {
       setLoading(true);
       await axios.patch(
         `${apiUrl}/api/v1/leaves/${leaveId}`,
-        { 
+        {
           status: 'approved',
-          remarks: remarks || 'Approved by admin'
+          remarks: remarks || 'Approved by admin',
         },
         {
           headers: {
@@ -83,7 +82,7 @@ function LeaveApproval() {
       );
       setConfirmAction(null);
       setRemarks('');
-      
+
       // After approval, refresh the current view
       fetchLeaveRequests();
     } catch (err) {
@@ -97,9 +96,9 @@ function LeaveApproval() {
       setLoading(true);
       await axios.patch(
         `${apiUrl}/api/v1/leaves/${leaveId}`,
-        { 
+        {
           status: 'rejected',
-          remarks: remarks || 'Rejected by admin'
+          remarks: remarks || 'Rejected by admin',
         },
         {
           headers: {
@@ -109,7 +108,7 @@ function LeaveApproval() {
       );
       setConfirmAction(null);
       setRemarks('');
-      
+
       // After rejection, refresh the current view
       fetchLeaveRequests();
     } catch (err) {
@@ -129,7 +128,7 @@ function LeaveApproval() {
   };
 
   const getLeaveTypeColor = (type) => {
-    switch(type) {
+    switch (type) {
       case 'sick':
         return 'bg-red-100 text-red-800';
       case 'full':
@@ -154,17 +153,20 @@ function LeaveApproval() {
     }
   };
 
-  const filteredRequests = leaveRequests.filter(request => {
-    const fullName = `${request.user?.fullName?.first || ''} ${request.user?.fullName?.last || ''}`.toLowerCase();
+  const filteredRequests = leaveRequests.filter((request) => {
+    const fullName =
+      `${request.user?.fullName?.first || ''} ${request.user?.fullName?.last || ''}`.toLowerCase();
     const email = (request.user?.email || '').toLowerCase();
     const leaveType = (request.leaveType || '').toLowerCase();
     const reason = (request.reason || '').toLowerCase();
     const searchLower = searchTerm.toLowerCase();
-    
-    return fullName.includes(searchLower) || 
-           email.includes(searchLower) || 
-           leaveType.includes(searchLower) || 
-           reason.includes(searchLower);
+
+    return (
+      fullName.includes(searchLower) ||
+      email.includes(searchLower) ||
+      leaveType.includes(searchLower) ||
+      reason.includes(searchLower)
+    );
   });
 
   return (
@@ -219,7 +221,7 @@ function LeaveApproval() {
               All
             </button>
           </div>
-          
+
           <div className="relative">
             <input
               type="text"
@@ -229,8 +231,17 @@ function LeaveApproval() {
               className="w-full md:w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent"
             />
             <div className="absolute left-3 top-2.5 text-gray-400">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
           </div>
@@ -241,8 +252,17 @@ function LeaveApproval() {
           <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <svg
+                  className="h-5 w-5 text-red-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
               <div className="ml-3">
@@ -254,8 +274,17 @@ function LeaveApproval() {
                     onClick={() => setError(null)}
                     className="inline-flex rounded-md p-1.5 text-red-500 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
-                    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    <svg
+                      className="h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -271,18 +300,28 @@ function LeaveApproval() {
           </div>
         ) : filteredRequests.length === 0 ? (
           <div className="text-center py-8">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <svg
+              className="mx-auto h-12 w-12 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
             </svg>
             <h3 className="mt-2 text-sm font-medium text-gray-900">No leave requests</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {filterStatus === 'pending' 
-                ? 'There are no pending leave requests to approve.' 
+              {filterStatus === 'pending'
+                ? 'There are no pending leave requests to approve.'
                 : filterStatus === 'approved'
-                ? 'No approved leave requests found.'
-                : filterStatus === 'rejected'
-                ? 'No rejected leave requests found.'
-                : 'No leave requests found.'}
+                  ? 'No approved leave requests found.'
+                  : filterStatus === 'rejected'
+                    ? 'No rejected leave requests found.'
+                    : 'No leave requests found.'}
             </p>
           </div>
         ) : (
@@ -290,13 +329,43 @@ function LeaveApproval() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Leave Type</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Employee
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Leave Type
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Duration
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Reason
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Status
+                  </th>
                   {filterStatus === 'pending' && (
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Actions
+                    </th>
                   )}
                 </tr>
               </thead>
@@ -307,12 +376,14 @@ function LeaveApproval() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
                           <span className="text-gray-600 font-medium">
-                            {request.user?.fullName?.first?.charAt(0) || '?'}{request.user?.fullName?.last?.charAt(0) || '?'}
+                            {request.user?.fullName?.first?.charAt(0) || '?'}
+                            {request.user?.fullName?.last?.charAt(0) || '?'}
                           </span>
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {request.user?.fullName?.first || ''} {request.user?.fullName?.last || ''}
+                            {request.user?.fullName?.first || ''}{' '}
+                            {request.user?.fullName?.last || ''}
                           </div>
                           <div className="text-sm text-gray-500">
                             {request.user?.email || 'No email provided'}
@@ -321,7 +392,9 @@ function LeaveApproval() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getLeaveTypeColor(request.leaveType)}`}>
+                      <span
+                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getLeaveTypeColor(request.leaveType)}`}
+                      >
                         {request.leaveType.charAt(0).toUpperCase() + request.leaveType.slice(1)}
                       </span>
                     </td>
@@ -344,7 +417,9 @@ function LeaveApproval() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(request.status)}`}>
+                      <span
+                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(request.status)}`}
+                      >
                         {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                       </span>
                     </td>

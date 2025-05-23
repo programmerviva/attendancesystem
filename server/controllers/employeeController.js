@@ -6,7 +6,7 @@ export const getEmployeeDashboard = async (req, res, next) => {
   try {
     // Get the current user from the request (set by the protect middleware)
     const employee = req.user;
-    
+
     if (!employee) {
       return next(new AppError('Employee not found', 404));
     }
@@ -31,8 +31,8 @@ export const getEmployeeDashboard = async (req, res, next) => {
           designation: employee.designation,
           joiningDate: employee.joiningDate,
           // Don't include sensitive information like password
-        }
-      }
+        },
+      },
     });
   } catch (err) {
     next(err);
@@ -43,7 +43,7 @@ export const getEmployeeDashboard = async (req, res, next) => {
 export const getEmployeeProfile = async (req, res, next) => {
   try {
     const employee = req.user;
-    
+
     if (!employee) {
       return next(new AppError('Employee not found', 404));
     }
@@ -62,8 +62,8 @@ export const getEmployeeProfile = async (req, res, next) => {
           designation: employee.designation,
           joiningDate: employee.joiningDate,
           profileImage: employee.profileImage || '',
-        }
-      }
+        },
+      },
     });
   } catch (err) {
     next(err);
@@ -75,8 +75,18 @@ export const updateEmployeeProfile = async (req, res, next) => {
   try {
     // Accept all editable fields from the request body
     const allowedFields = [
-      'mobile', 'profileImage', 'address', 'city', 'state', 'country', 'postalCode',
-      'department', 'designation', 'joiningDate', 'manager', 'email'
+      'mobile',
+      'profileImage',
+      'address',
+      'city',
+      'state',
+      'country',
+      'postalCode',
+      'department',
+      'designation',
+      'joiningDate',
+      'manager',
+      'email',
     ];
     const updateData = {};
     for (const field of allowedFields) {
@@ -84,14 +94,14 @@ export const updateEmployeeProfile = async (req, res, next) => {
         updateData[field] = req.body[field];
       }
     }
-    
+
     // Convert dates to start of day for accurate comparison
     if (updateData.joiningDate) {
       const joiningDate = new Date(updateData.joiningDate);
       joiningDate.setHours(0, 0, 0, 0);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       updateData.joiningDate = joiningDate; // Store the clean date
     }
 
@@ -101,16 +111,20 @@ export const updateEmployeeProfile = async (req, res, next) => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       if (joiningDate > today) {
-        return next(new AppError(`Joining date cannot be in the future. Received: ${updateData.joiningDate}`, 400));
+        return next(
+          new AppError(
+            `Joining date cannot be in the future. Received: ${updateData.joiningDate}`,
+            400
+          )
+        );
       }
     }
 
     // Find and update the employee
-    const updatedEmployee = await User.findByIdAndUpdate(
-      req.user._id,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    const updatedEmployee = await User.findByIdAndUpdate(req.user._id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!updatedEmployee) {
       return next(new AppError('Employee not found', 404));
@@ -135,9 +149,9 @@ export const updateEmployeeProfile = async (req, res, next) => {
           country: updatedEmployee.country,
           postalCode: updatedEmployee.postalCode,
           manager: updatedEmployee.manager,
-          profileImage: updatedEmployee.profileImage || ''
-        }
-      }
+          profileImage: updatedEmployee.profileImage || '',
+        },
+      },
     });
   } catch (err) {
     next(err);

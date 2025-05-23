@@ -42,8 +42,8 @@ export const useLocation = () => {
       },
       {
         enableHighAccuracy: true, // 🎯 High accuracy mode
-        timeout: 10000,           // Optional: 10 second timeout
-        maximumAge: 0             // Don't use cached location
+        timeout: 10000, // Optional: 10 second timeout
+        maximumAge: 0, // Don't use cached location
       }
     );
   }, []);

@@ -1,8 +1,8 @@
 import express from 'express';
-import { 
-  getEmployeeDashboard, 
-  getEmployeeProfile, 
-  updateEmployeeProfile 
+import {
+  getEmployeeDashboard,
+  getEmployeeProfile,
+  updateEmployeeProfile,
 } from '../controllers/employeeController.js';
 import { protect } from '../controllers/authController.js';
 

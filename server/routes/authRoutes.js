@@ -1,14 +1,14 @@
 import express from 'express';
-import { 
-  register, 
-  login, 
-  forgotPassword, 
-  resetPassword, 
+import {
+  register,
+  login,
+  forgotPassword,
+  resetPassword,
   updatePassword,
   protect,
   restrictTo,
   checkEmail,
-  directReset
+  directReset,
 } from '../controllers/authController.js';
 
 const router = express.Router();

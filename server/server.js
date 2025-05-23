@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-dotenv.config()
+dotenv.config();
 
 import express from 'express';
 import mongoose from 'mongoose';
@@ -22,9 +22,10 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
+mongoose
+  .connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB Atlas'))
-  .catch(err => console.error('MongoDB connection error:', err));
+  .catch((err) => console.error('MongoDB connection error:', err));
 
 // Routes
 app.use('/api/v1/auth', authRouter);
@@ -48,6 +49,7 @@ const PORT = process.env.PORT || 5000;
 const server = http.createServer(app); // Create server for socket.io
 initSocket(server);
 
-server.listen(PORT, () => {  //  Listen ONCE
+server.listen(PORT, () => {
+  //  Listen ONCE
   console.log(`Server running on port ${PORT}`);
 });

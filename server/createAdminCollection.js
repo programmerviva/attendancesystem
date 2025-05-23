@@ -35,12 +35,12 @@ async function createAdminCollection() {
       const newAdmin = new Admin({
         fullName: {
           first: 'Admin',
-          last: 'User'
+          last: 'User',
         },
         email: adminEmail,
         userId: adminUserId,
         password: adminPassword,
-        role: 'admin'
+        role: 'admin',
       });
       await newAdmin.save();
       console.log(`New admin created in Admin collection with email: ${adminEmail}`);

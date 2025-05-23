@@ -5,7 +5,7 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-const apiUrl = import.meta.env.VITE_API_URL
+const apiUrl = import.meta.env.VITE_API_URL;
 
 function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -53,29 +53,25 @@ function UserManagement() {
       if (!userData.password || userData.password.trim() === '') {
         userData.password = 'password123'; // Default password
       }
-      
+
       // Ensure userId is set
       if (!userData.userId || userData.userId.trim() === '') {
         setError('User ID is required');
         return;
       }
-      
+
       console.log('Creating user with data:', userData);
-      
+
       // Send the request to our new endpoint
-      const response = await axios.post(
-        `${apiUrl}/api/v1/users`,
-        userData,
-        {
-          headers: {
-            Authorization: `Bearer ${token || localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
-          },
-        }
-      );
-      
+      const response = await axios.post(`${apiUrl}/api/v1/users`, userData, {
+        headers: {
+          Authorization: `Bearer ${token || localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
       console.log('User creation response:', response.data);
-      
+
       // Reset form and close modal
       setIsCreatingUser(false);
       setNewUserData({
@@ -88,11 +84,13 @@ function UserManagement() {
         role: 'employee',
         password: '',
       });
-      
+
       // Fetch updated user list
       fetchUsers();
-      
-      alert(`User created successfully! Login credentials:\nUser ID: PF${userData.userId}\nPassword: ${userData.password}`);
+
+      alert(
+        `User created successfully! Login credentials:\nUser ID: PF${userData.userId}\nPassword: ${userData.password}`
+      );
     } catch (err) {
       console.error('Error creating user:', err);
       setError(err.response?.data?.message || 'Could not create user.');
@@ -101,17 +99,17 @@ function UserManagement() {
 
   const handleDeleteUser = async (userId) => {
     if (!confirm('Are you sure you want to delete this user?')) return;
-    
+
     try {
       await axios.delete(`${apiUrl}/api/v1/users/${userId}`, {
         headers: {
           Authorization: `Bearer ${token || localStorage.getItem('token')}`,
         },
       });
-      
+
       // Fetch updated user list
       fetchUsers();
-      
+
       alert('User deleted successfully!');
     } catch (err) {
       setError(err.response?.data?.message || 'Could not delete user.');
@@ -121,7 +119,7 @@ function UserManagement() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">User Management</h2>
-      
+
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
           <p>{error}</p>
@@ -130,12 +128,21 @@ function UserManagement() {
 
       {/* User Actions */}
       <div className="mb-6">
-        <button 
+        <button
           onClick={() => setIsCreatingUser(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition duration-150 ease-in-out flex items-center"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 mr-2"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+              clipRule="evenodd"
+            />
           </svg>
           Create New User
         </button>
@@ -155,21 +162,63 @@ function UserManagement() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Full Name</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Designation</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Full Name
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  User ID
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Email
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Mobile
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Department
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Designation
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Role
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {users.map((user) => (
                 <tr key={user._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{user.fullName.first} {user.fullName.last}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {user.fullName.first} {user.fullName.last}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">PF{user.userId}</div>
@@ -187,18 +236,20 @@ function UserManagement() {
                     <div className="text-sm text-gray-500">{user.designation}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      user.role === 'admin' 
-                        ? 'bg-purple-100 text-purple-800' 
-                        : user.role === 'subadmin' 
-                        ? 'bg-blue-100 text-blue-800' 
-                        : 'bg-green-100 text-green-800'
-                    }`}>
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        user.role === 'admin'
+                          ? 'bg-purple-100 text-purple-800'
+                          : user.role === 'subadmin'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-green-100 text-green-800'
+                      }`}
+                    >
                       {user.role}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button 
+                    <button
                       onClick={() => handleDeleteUser(user._id)}
                       className="text-red-600 hover:text-red-900 mr-3"
                     >
@@ -218,48 +269,72 @@ function UserManagement() {
           <div className="relative bg-white rounded-lg shadow-xl max-w-md mx-auto p-6 w-full">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">Create New User</h3>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setIsCreatingUser(false)}
                 className="text-gray-400 hover:text-gray-500"
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
-            
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              handleCreateUser();
-            }} className="space-y-4">
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleCreateUser();
+              }}
+              className="space-y-4"
+            >
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">First Name</label>
+                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                    First Name
+                  </label>
                   <input
                     type="text"
                     id="firstName"
                     value={newUserData.fullName.first}
-                    onChange={(e) => setNewUserData({ ...newUserData, fullName: { ...newUserData.fullName, first: e.target.value } })}
+                    onChange={(e) =>
+                      setNewUserData({
+                        ...newUserData,
+                        fullName: { ...newUserData.fullName, first: e.target.value },
+                      })
+                    }
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     required
                   />
                 </div>
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Last Name</label>
+                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                    Last Name
+                  </label>
                   <input
                     type="text"
                     id="lastName"
                     value={newUserData.fullName.last}
-                    onChange={(e) => setNewUserData({ ...newUserData, fullName: { ...newUserData.fullName, last: e.target.value } })}
+                    onChange={(e) =>
+                      setNewUserData({
+                        ...newUserData,
+                        fullName: { ...newUserData.fullName, last: e.target.value },
+                      })
+                    }
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     required
                   />
                 </div>
               </div>
-              
+
               <div>
-                <label htmlFor="userId" className="block text-sm font-medium text-gray-700">User ID</label>
+                <label htmlFor="userId" className="block text-sm font-medium text-gray-700">
+                  User ID
+                </label>
                 <div className="mt-1 relative rounded-md shadow-sm">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <span className="text-gray-500 sm:text-sm">PF</span>
@@ -274,11 +349,15 @@ function UserManagement() {
                     required
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">User will login with PF prefix (e.g. PFuser123)</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  User will login with PF prefix (e.g. PFuser123)
+                </p>
               </div>
-              
+
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email (Optional)</label>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Email (Optional)
+                </label>
                 <input
                   type="email"
                   id="email"
@@ -287,9 +366,11 @@ function UserManagement() {
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
-              
+
               <div>
-                <label htmlFor="mobile" className="block text-sm font-medium text-gray-700">Mobile</label>
+                <label htmlFor="mobile" className="block text-sm font-medium text-gray-700">
+                  Mobile
+                </label>
                 <input
                   type="text"
                   id="mobile"
@@ -299,9 +380,11 @@ function UserManagement() {
                   required
                 />
               </div>
-              
+
               <div>
-                <label htmlFor="department" className="block text-sm font-medium text-gray-700">Department</label>
+                <label htmlFor="department" className="block text-sm font-medium text-gray-700">
+                  Department
+                </label>
                 <select
                   id="department"
                   value={newUserData.department}
@@ -316,9 +399,11 @@ function UserManagement() {
                   <option value="Administration">Administration</option>
                 </select>
               </div>
-              
+
               <div>
-                <label htmlFor="designation" className="block text-sm font-medium text-gray-700">Designation</label>
+                <label htmlFor="designation" className="block text-sm font-medium text-gray-700">
+                  Designation
+                </label>
                 <input
                   type="text"
                   id="designation"
@@ -328,9 +413,11 @@ function UserManagement() {
                   required
                 />
               </div>
-              
+
               <div>
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+                  Role
+                </label>
                 <select
                   id="role"
                   value={newUserData.role}
@@ -341,9 +428,11 @@ function UserManagement() {
                   <option value="subadmin">Subadmin</option>
                 </select>
               </div>
-              
+
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
                 <input
                   type="password"
                   id="password"
@@ -352,9 +441,11 @@ function UserManagement() {
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Enter password or leave for default"
                 />
-                <p className="text-xs text-gray-500 mt-1">If left blank, a default password will be set.</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  If left blank, a default password will be set.
+                </p>
               </div>
-              
+
               <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"

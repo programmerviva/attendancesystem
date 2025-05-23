@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
-const apiUrl = import.meta.env.VITE_API_URL
+const apiUrl = import.meta.env.VITE_API_URL;
 
 function AttendanceHistory() {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
@@ -10,7 +10,7 @@ function AttendanceHistory() {
   const [error, setError] = useState(null);
   const [dateRange, setDateRange] = useState({
     startDate: dayjs().subtract(30, 'day').format('YYYY-MM-DD'),
-    endDate: dayjs().format('YYYY-MM-DD')
+    endDate: dayjs().format('YYYY-MM-DD'),
   });
   const [currentMonth, setCurrentMonth] = useState(dayjs().month());
   const [currentYear, setCurrentYear] = useState(dayjs().year());
@@ -22,7 +22,7 @@ function AttendanceHistory() {
     late: 0,
     halfDay: 0,
     workingDays: 0,
-    weekendDays: 0
+    weekendDays: 0,
   });
 
   const token = localStorage.getItem('token');
@@ -40,9 +40,9 @@ function AttendanceHistory() {
     try {
       const response = await axios.get(`${apiUrl}/api/v1/attendance/history`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: dateRange
+        params: dateRange,
       });
-      
+
       setAttendanceRecords(response.data.data.attendance);
       setError(null);
     } catch (err) {
@@ -56,40 +56,51 @@ function AttendanceHistory() {
   const fetchMonthlyAttendance = async () => {
     setCalendarLoading(true);
     try {
-      const startOfMonth = dayjs().year(currentYear).month(currentMonth).startOf('month').format('YYYY-MM-DD');
-      const endOfMonth = dayjs().year(currentYear).month(currentMonth).endOf('month').format('YYYY-MM-DD');
-      
+      const startOfMonth = dayjs()
+        .year(currentYear)
+        .month(currentMonth)
+        .startOf('month')
+        .format('YYYY-MM-DD');
+      const endOfMonth = dayjs()
+        .year(currentYear)
+        .month(currentMonth)
+        .endOf('month')
+        .format('YYYY-MM-DD');
+
       const response = await axios.get(`${apiUrl}/api/v1/attendance/history`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { startDate: startOfMonth, endDate: endOfMonth }
+        params: { startDate: startOfMonth, endDate: endOfMonth },
       });
-      
+
       const records = response.data.data.attendance || [];
       setMonthlyAttendance(records);
-      
+
       // Calculate summary
-      const present = records.filter(r => r.status === 'present').length;
-      const absent = records.filter(r => r.status === 'absent').length;
-      const late = records.filter(r => r.status === 'late').length;
-      const halfDay = records.filter(r => r.status === 'half-day').length;
-      
+      const present = records.filter((r) => r.status === 'present').length;
+      const absent = records.filter((r) => r.status === 'absent').length;
+      const late = records.filter((r) => r.status === 'late').length;
+      const halfDay = records.filter((r) => r.status === 'half-day').length;
+
       // Calculate working days (excluding weekends)
       const daysInMonth = dayjs().year(currentYear).month(currentMonth).daysInMonth();
-      const weekendDays = Array.from({ length: daysInMonth }, 
-        (_, i) => dayjs().year(currentYear).month(currentMonth).date(i + 1).day())
-        .filter(day => day === 0 || day === 6).length;
-      
+      const weekendDays = Array.from({ length: daysInMonth }, (_, i) =>
+        dayjs()
+          .year(currentYear)
+          .month(currentMonth)
+          .date(i + 1)
+          .day()
+      ).filter((day) => day === 0 || day === 6).length;
+
       const workingDays = daysInMonth - weekendDays;
-      
+
       setMonthlySummary({
         present,
         absent,
         late,
         halfDay,
         workingDays,
-        weekendDays
+        weekendDays,
       });
-      
     } catch (err) {
       console.error('Error fetching monthly attendance:', err);
     } finally {
@@ -131,12 +142,10 @@ function AttendanceHistory() {
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       return { status: 'weekend', color: 'bg-gray-200' };
     }
-    
+
     // Find attendance record for this date
-    const record = monthlyAttendance.find(r => 
-      dayjs(r.date).format('YYYY-MM-DD') === date
-    );
-    
+    const record = monthlyAttendance.find((r) => dayjs(r.date).format('YYYY-MM-DD') === date);
+
     if (!record) {
       // If date is in the future, show as upcoming
       if (dayjs(date).isAfter(dayjs(), 'day')) {
@@ -145,7 +154,7 @@ function AttendanceHistory() {
       // Otherwise, show as absent
       return { status: 'absent', color: 'bg-red-200' };
     }
-    
+
     switch (record.status) {
       case 'present':
         return { status: 'present', color: 'bg-green-200' };
@@ -163,22 +172,22 @@ function AttendanceHistory() {
   const renderCalendar = () => {
     const daysInMonth = dayjs().year(currentYear).month(currentMonth).daysInMonth();
     const firstDayOfMonth = dayjs().year(currentYear).month(currentMonth).startOf('month').day(); // 0 = Sunday
-    
+
     const days = [];
-    
+
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDayOfMonth; i++) {
       days.push(<div key={`empty-${i}`} className="h-12 border border-gray-200"></div>);
     }
-    
+
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = dayjs().year(currentYear).month(currentMonth).date(day).format('YYYY-MM-DD');
       const { status, color } = getAttendanceStatus(date);
-      
+
       days.push(
-        <div 
-          key={day} 
+        <div
+          key={day}
           className={`h-12 border border-gray-200 ${color} flex flex-col justify-between p-1 cursor-pointer hover:border-blue-500`}
         >
           <span className="text-xs font-medium">{day}</span>
@@ -186,7 +195,7 @@ function AttendanceHistory() {
         </div>
       );
     }
-    
+
     return days;
   };
 
@@ -209,8 +218,18 @@ function AttendanceHistory() {
   };
 
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   return (
@@ -225,7 +244,9 @@ function AttendanceHistory() {
           {/* Date Range Filter */}
           <div className="mb-6 flex flex-wrap gap-4">
             <div>
-              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+                Start Date
+              </label>
               <input
                 type="date"
                 id="startDate"
@@ -235,7 +256,9 @@ function AttendanceHistory() {
               />
             </div>
             <div>
-              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+                End Date
+              </label>
               <input
                 type="date"
                 id="endDate"
@@ -251,8 +274,17 @@ function AttendanceHistory() {
             <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
                 <div className="ml-3">
@@ -265,7 +297,7 @@ function AttendanceHistory() {
           {/* Monthly View with Calendar and Summary */}
           <div className="mb-8">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Attendance View</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Left Column - Monthly Summary */}
               <div className="md:col-span-1">
@@ -276,28 +308,48 @@ function AttendanceHistory() {
                       <p className="text-sm text-gray-500">Present Days</p>
                       <p className="font-medium text-lg">{monthlySummary.present}</p>
                       <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                        <div className="bg-green-500 h-2 rounded-full" style={{ width: `${(monthlySummary.present / monthlySummary.workingDays) * 100}%` }}></div>
+                        <div
+                          className="bg-green-500 h-2 rounded-full"
+                          style={{
+                            width: `${(monthlySummary.present / monthlySummary.workingDays) * 100}%`,
+                          }}
+                        ></div>
                       </div>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Late Days</p>
                       <p className="font-medium text-lg">{monthlySummary.late}</p>
                       <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${(monthlySummary.late / monthlySummary.workingDays) * 100}%` }}></div>
+                        <div
+                          className="bg-blue-500 h-2 rounded-full"
+                          style={{
+                            width: `${(monthlySummary.late / monthlySummary.workingDays) * 100}%`,
+                          }}
+                        ></div>
                       </div>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Half Days</p>
                       <p className="font-medium text-lg">{monthlySummary.halfDay}</p>
                       <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                        <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${(monthlySummary.halfDay / monthlySummary.workingDays) * 100}%` }}></div>
+                        <div
+                          className="bg-yellow-500 h-2 rounded-full"
+                          style={{
+                            width: `${(monthlySummary.halfDay / monthlySummary.workingDays) * 100}%`,
+                          }}
+                        ></div>
                       </div>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Absent Days</p>
                       <p className="font-medium text-lg">{monthlySummary.absent}</p>
                       <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                        <div className="bg-red-500 h-2 rounded-full" style={{ width: `${(monthlySummary.absent / monthlySummary.workingDays) * 100}%` }}></div>
+                        <div
+                          className="bg-red-500 h-2 rounded-full"
+                          style={{
+                            width: `${(monthlySummary.absent / monthlySummary.workingDays) * 100}%`,
+                          }}
+                        ></div>
                       </div>
                     </div>
                     <div>
@@ -310,31 +362,47 @@ function AttendanceHistory() {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Attendance Rate</p>
-                      <p className="font-medium text-lg">{Math.round((monthlySummary.present / monthlySummary.workingDays) * 100)}%</p>
+                      <p className="font-medium text-lg">
+                        {Math.round((monthlySummary.present / monthlySummary.workingDays) * 100)}%
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               {/* Right Column - Calendar */}
               <div className="md:col-span-2">
                 {/* Month Navigation */}
                 <div className="flex justify-between items-center mb-4">
-                  <button 
-                    onClick={previousMonth}
-                    className="p-2 rounded-full hover:bg-gray-200"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                  <button onClick={previousMonth} className="p-2 rounded-full hover:bg-gray-200">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </button>
-                  <h3 className="text-lg font-medium">{monthNames[currentMonth]} {currentYear}</h3>
-                  <button 
-                    onClick={nextMonth}
-                    className="p-2 rounded-full hover:bg-gray-200"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  <h3 className="text-lg font-medium">
+                    {monthNames[currentMonth]} {currentYear}
+                  </h3>
+                  <button onClick={nextMonth} className="p-2 rounded-full hover:bg-gray-200">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -372,17 +440,15 @@ function AttendanceHistory() {
                   <div>
                     {/* Day headers */}
                     <div className="grid grid-cols-7 gap-1 mb-1">
-                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                         <div key={day} className="text-center font-medium text-sm py-2 bg-gray-100">
                           {day}
                         </div>
                       ))}
                     </div>
-                    
+
                     {/* Calendar grid */}
-                    <div className="grid grid-cols-7 gap-1">
-                      {renderCalendar()}
-                    </div>
+                    <div className="grid grid-cols-7 gap-1">{renderCalendar()}</div>
                   </div>
                 )}
               </div>
@@ -397,22 +463,59 @@ function AttendanceHistory() {
             </div>
           ) : attendanceRecords.length === 0 ? (
             <div className="text-center py-8">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
               </svg>
               <h3 className="mt-2 text-sm font-medium text-gray-900">No attendance records</h3>
-              <p className="mt-1 text-sm text-gray-500">No attendance records found for the selected date range.</p>
+              <p className="mt-1 text-sm text-gray-500">
+                No attendance records found for the selected date range.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check In</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check Out</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Work Hours</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Date
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Check In
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Check Out
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Work Hours
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Status
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -431,8 +534,11 @@ function AttendanceHistory() {
                         {record.workHours ? `${record.workHours} hrs` : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(record.status)}`}>
-                          {record.status.charAt(0).toUpperCase() + record.status.slice(1).replace('-', ' ')}
+                        <span
+                          className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(record.status)}`}
+                        >
+                          {record.status.charAt(0).toUpperCase() +
+                            record.status.slice(1).replace('-', ' ')}
                         </span>
                       </td>
                     </tr>

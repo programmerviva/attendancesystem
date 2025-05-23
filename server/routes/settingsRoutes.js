@@ -1,11 +1,11 @@
 import express from 'express';
-import { 
-  getSettings, 
-  updateSettings, 
-  addHoliday, 
-  updateHoliday, 
-  deleteHoliday, 
-  getHolidays 
+import {
+  getSettings,
+  updateSettings,
+  addHoliday,
+  updateHoliday,
+  deleteHoliday,
+  getHolidays,
 } from '../controllers/settingsController.js';
 import { protect, restrictTo } from '../controllers/authController.js';
 

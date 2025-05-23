@@ -1,11 +1,11 @@
 import express from 'express';
-import { 
-  createAttendance, 
-  getTodayAttendance, 
+import {
+  createAttendance,
+  getTodayAttendance,
   getAttendanceHistory,
   getEmployeeAttendance,
   getAllAttendance,
-  getCompOffDates
+  getCompOffDates,
 } from '../controllers/attendanceController.js';
 import { protect, restrictTo } from '../controllers/authController.js';
 

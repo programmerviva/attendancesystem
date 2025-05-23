@@ -10,7 +10,7 @@ function HolidayCalendar() {
   const [newHoliday, setNewHoliday] = useState({
     date: dayjs().format('YYYY-MM-DD'),
     name: '',
-    description: ''
+    description: '',
   });
   const [isAddingHoliday, setIsAddingHoliday] = useState(false);
   const [editingHolidayId, setEditingHolidayId] = useState(null);
@@ -26,9 +26,9 @@ function HolidayCalendar() {
     setLoading(true);
     try {
       const response = await axios.get(`${apiUrl}/api/v1/settings/holidays`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       setHolidays(response.data.data.holidays || []);
       setError(null);
     } catch (err) {
@@ -41,26 +41,26 @@ function HolidayCalendar() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewHoliday(prev => ({
+    setNewHoliday((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleAddHoliday = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const response = await axios.post(`${apiUrl}/api/v1/settings/holidays`, newHoliday, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       // Reset form and refresh holidays
       setNewHoliday({
         date: dayjs().format('YYYY-MM-DD'),
         name: '',
-        description: ''
+        description: '',
       });
       setIsAddingHoliday(false);
       fetchHolidays();
@@ -74,17 +74,17 @@ function HolidayCalendar() {
   const handleEditHoliday = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       await axios.patch(`${apiUrl}/api/v1/settings/holidays/${editingHolidayId}`, newHoliday, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       // Reset form and refresh holidays
       setNewHoliday({
         date: dayjs().format('YYYY-MM-DD'),
         name: '',
-        description: ''
+        description: '',
       });
       setEditingHolidayId(null);
       fetchHolidays();
@@ -97,13 +97,13 @@ function HolidayCalendar() {
 
   const handleDeleteHoliday = async (id) => {
     if (!window.confirm('Are you sure you want to delete this holiday?')) return;
-    
+
     setLoading(true);
     try {
       await axios.delete(`${apiUrl}/api/v1/settings/holidays/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       fetchHolidays();
     } catch (err) {
       console.error('Error deleting holiday:', err);
@@ -116,7 +116,7 @@ function HolidayCalendar() {
     setNewHoliday({
       date: dayjs(holiday.date).format('YYYY-MM-DD'),
       name: holiday.name,
-      description: holiday.description || ''
+      description: holiday.description || '',
     });
     setEditingHolidayId(holiday._id);
   };
@@ -125,7 +125,7 @@ function HolidayCalendar() {
     setNewHoliday({
       date: dayjs().format('YYYY-MM-DD'),
       name: '',
-      description: ''
+      description: '',
     });
     setEditingHolidayId(null);
     setIsAddingHoliday(false);
@@ -153,8 +153,17 @@ function HolidayCalendar() {
         <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
           <div className="flex">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              <svg
+                className="h-5 w-5 text-red-400"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             <div className="ml-3">
@@ -173,7 +182,9 @@ function HolidayCalendar() {
           <form onSubmit={editingHolidayId ? handleEditHoliday : handleAddHoliday}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+                  Date
+                </label>
                 <input
                   type="date"
                   id="date"
@@ -185,7 +196,9 @@ function HolidayCalendar() {
                 />
               </div>
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Holiday Name</label>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Holiday Name
+                </label>
                 <input
                   type="text"
                   id="name"
@@ -199,7 +212,9 @@ function HolidayCalendar() {
               </div>
             </div>
             <div className="mb-4">
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                Description (Optional)
+              </label>
               <textarea
                 id="description"
                 name="description"
@@ -237,8 +252,18 @@ function HolidayCalendar() {
         </div>
       ) : holidays.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 rounded-lg">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <svg
+            className="mx-auto h-12 w-12 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1}
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
           </svg>
           <h3 className="mt-2 text-sm font-medium text-gray-900">No holidays defined</h3>
           <p className="mt-1 text-sm text-gray-500">Get started by adding a company holiday.</p>
@@ -248,10 +273,30 @@ function HolidayCalendar() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Holiday Name</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Date
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Holiday Name
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Description
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -263,9 +308,7 @@ function HolidayCalendar() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {holiday.name}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {holiday.description || '-'}
-                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{holiday.description || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => startEditHoliday(holiday)}

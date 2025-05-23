@@ -6,9 +6,8 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import EmployeeHolidayCalendar from '../components/EmployeeHolidayCalendar';
 import MyProfile from '../components/MyProfile';
- 
 
-const apiUrl = import.meta.env.VITE_API_URL
+const apiUrl = import.meta.env.VITE_API_URL;
 
 function EmployeeDashboardPage() {
   const [user, setUser] = useState(null);
@@ -19,7 +18,7 @@ function EmployeeDashboardPage() {
     present: 0,
     absent: 0,
     late: 0,
-    total: 0
+    total: 0,
   });
   const [error, setError] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(dayjs().month());
@@ -34,16 +33,16 @@ function EmployeeDashboardPage() {
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
-    
+
     if (!token) {
       navigate('/login');
       return;
     }
-    
+
     try {
       const parsedUser = userData ? JSON.parse(userData) : null;
       setUser(parsedUser);
-      
+
       // Redirect admin to admin dashboard
       if (parsedUser && parsedUser.role === 'admin') {
         navigate('/admin/dashboard');
@@ -70,13 +69,13 @@ function EmployeeDashboardPage() {
     try {
       // Fetch today's attendance
       const attendanceRes = await axios.get(`${apiUrl}/api/v1/attendance/today`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       setTodayAttendance(attendanceRes.data.data.attendance);
 
       // Fetch recent leave requests
       const leavesRes = await axios.get(`${apiUrl}/api/v1/leaves`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       setRecentLeaves(leavesRes.data.data.leaves?.slice(0, 5) || []);
 
@@ -90,32 +89,44 @@ function EmployeeDashboardPage() {
   const fetchMonthlyAttendance = async () => {
     setCalendarLoading(true);
     try {
-      const startOfMonth = dayjs().year(currentYear).month(currentMonth).startOf('month').format('YYYY-MM-DD');
-      const endOfMonth = dayjs().year(currentYear).month(currentMonth).endOf('month').format('YYYY-MM-DD');
-      
+      const startOfMonth = dayjs()
+        .year(currentYear)
+        .month(currentMonth)
+        .startOf('month')
+        .format('YYYY-MM-DD');
+      const endOfMonth = dayjs()
+        .year(currentYear)
+        .month(currentMonth)
+        .endOf('month')
+        .format('YYYY-MM-DD');
+
       const summaryRes = await axios.get(`${apiUrl}/api/v1/attendance/history`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { startDate: startOfMonth, endDate: endOfMonth }
+        params: { startDate: startOfMonth, endDate: endOfMonth },
       });
-      
+
       // Get attendance records
       const records = summaryRes.data.data.attendance || [];
       setMonthlyAttendance(records);
-      
+
       // Calculate summary
-      const present = records.filter(r => r.status === 'present').length;
-      const absent = records.filter(r => r.status === 'absent').length;
-      const late = records.filter(r => r.status === 'late').length;
-      const halfDay = records.filter(r => r.status === 'half-day').length;
-      
+      const present = records.filter((r) => r.status === 'present').length;
+      const absent = records.filter((r) => r.status === 'absent').length;
+      const late = records.filter((r) => r.status === 'late').length;
+      const halfDay = records.filter((r) => r.status === 'half-day').length;
+
       // Calculate working days (excluding weekends)
       const daysInMonth = dayjs().year(currentYear).month(currentMonth).daysInMonth();
-      const weekendDays = Array.from({ length: daysInMonth }, 
-        (_, i) => dayjs().year(currentYear).month(currentMonth).date(i + 1).day())
-        .filter(day => day === 0 || day === 6).length;
-      
+      const weekendDays = Array.from({ length: daysInMonth }, (_, i) =>
+        dayjs()
+          .year(currentYear)
+          .month(currentMonth)
+          .date(i + 1)
+          .day()
+      ).filter((day) => day === 0 || day === 6).length;
+
       const workingDays = daysInMonth - weekendDays;
-      
+
       setAttendanceSummary({
         present,
         absent,
@@ -123,7 +134,7 @@ function EmployeeDashboardPage() {
         halfDay,
         workingDays,
         weekendDays,
-        total: records.length
+        total: records.length,
       });
     } catch (err) {
       console.error('Error fetching monthly attendance:', err);
@@ -160,12 +171,10 @@ function EmployeeDashboardPage() {
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       return { status: 'weekend', color: 'bg-gray-200' };
     }
-    
+
     // Find attendance record for this date
-    const record = monthlyAttendance.find(r => 
-      dayjs(r.date).format('YYYY-MM-DD') === date
-    );
-    
+    const record = monthlyAttendance.find((r) => dayjs(r.date).format('YYYY-MM-DD') === date);
+
     if (!record) {
       // If date is in the future, show as upcoming
       if (dayjs(date).isAfter(dayjs(), 'day')) {
@@ -174,7 +183,7 @@ function EmployeeDashboardPage() {
       // Otherwise, show as absent
       return { status: 'absent', color: 'bg-red-200' };
     }
-    
+
     switch (record.status) {
       case 'present':
         return { status: 'present', color: 'bg-green-200' };
@@ -192,22 +201,22 @@ function EmployeeDashboardPage() {
   const renderCalendar = () => {
     const daysInMonth = dayjs().year(currentYear).month(currentMonth).daysInMonth();
     const firstDayOfMonth = dayjs().year(currentYear).month(currentMonth).startOf('month').day(); // 0 = Sunday
-    
+
     const days = [];
-    
+
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDayOfMonth; i++) {
       days.push(<div key={`empty-${i}`} className="h-10 border border-gray-200"></div>);
     }
-    
+
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = dayjs().year(currentYear).month(currentMonth).date(day).format('YYYY-MM-DD');
       const { status, color } = getAttendanceStatus(date);
-      
+
       days.push(
-        <div 
-          key={day} 
+        <div
+          key={day}
           className={`h-10 border border-gray-200 ${color} flex flex-col justify-between p-1`}
         >
           <span className="text-xs font-medium">{day}</span>
@@ -215,7 +224,7 @@ function EmployeeDashboardPage() {
         </div>
       );
     }
-    
+
     return days;
   };
 
@@ -238,8 +247,18 @@ function EmployeeDashboardPage() {
   };
 
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   if (loading) {
@@ -256,17 +275,23 @@ function EmployeeDashboardPage() {
     setUser(updatedUser);
     localStorage.setItem('user', JSON.stringify(updatedUser));
   };
- 
+
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900"> <span className='text-[#ea590c]'>{user?.fullName?.first}</span>  Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {' '}
+            <span className="text-[#ea590c]">{user?.fullName?.first}</span> Dashboard
+          </h1>
           <div className="flex items-center">
             <span className="mr-4 text-gray-700">
-              Welcome, <span className='text-blue-600 font-semibold'>{user?.fullName?.first || 'Employee'} {user?.fullName?.last}</span>
+              Welcome,{' '}
+              <span className="text-blue-600 font-semibold">
+                {user?.fullName?.first || 'Employee'} {user?.fullName?.last}
+              </span>
             </span>
-            <button 
+            <button
               onClick={() => {
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
@@ -279,127 +304,131 @@ function EmployeeDashboardPage() {
           </div>
         </div>
       </header>
-      
+
       <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 h-auto">
           {/* Attendance Card */}
           <div className="bg-[#ffffff] overflow-hidden shadow-xl rounded-2xl h-full transition-all duration-300 hover:shadow-2xl">
-  <div className="px-6 py-6 sm:p-8">
-    <h3 className="text-3xl font-semibold mt-1 text-gray-800 border-b pb-3">📅 Today's Attendance</h3>
+            <div className="px-6 py-6 sm:p-8">
+              <h3 className="text-3xl font-semibold mt-1 text-gray-800 border-b pb-3">
+                📅 Today's Attendance
+              </h3>
 
-    <div className="mt-6">
-      {todayAttendance ? (
-        <div className="grid grid-cols-2 gap-6 text-center">
-          <div className="p-4 bg-blue-50 rounded-lg shadow-inner hover:bg-blue-100 transition">
-            <p className="text-sm font-medium text-gray-500">Check-In</p>
-            <p className="text-xl font-semibold text-blue-700 mt-1">
-              {todayAttendance.checkIn?.time ? formatTime(todayAttendance.checkIn.time) : 'Not checked in'}
-            </p>
+              <div className="mt-6">
+                {todayAttendance ? (
+                  <div className="grid grid-cols-2 gap-6 text-center">
+                    <div className="p-4 bg-blue-50 rounded-lg shadow-inner hover:bg-blue-100 transition">
+                      <p className="text-sm font-medium text-gray-500">Check-In</p>
+                      <p className="text-xl font-semibold text-blue-700 mt-1">
+                        {todayAttendance.checkIn?.time
+                          ? formatTime(todayAttendance.checkIn.time)
+                          : 'Not checked in'}
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-green-50 rounded-lg shadow-inner hover:bg-green-100 transition">
+                      <p className="text-sm font-medium text-gray-500">Check-Out</p>
+                      <p className="text-xl font-semibold text-green-700 mt-1">
+                        {todayAttendance.checkOut?.time
+                          ? formatTime(todayAttendance.checkOut.time)
+                          : 'Not checked out'}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 text-sm">No attendance record for today</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-[115px] text-center space-y-4">
+                {/* Motivational/Informational Quotes Based on Attendance State */}
+                {!todayAttendance?.checkIn ? (
+                  <p className="text-gray-500 text-sm text-[16px]">
+                    "Every new day is a fresh start. Let’s make it productive!" 🌞
+                  </p>
+                ) : !todayAttendance?.checkOut ? (
+                  <p className="text-gray-500 font-sm text-[16px]">
+                    "Great job showing up! Now finish strong and check out when you're done." 💪
+                  </p>
+                ) : (
+                  <p className="text-blue-700 italic text-[16px]">
+                    "You've completed today's journey. See your performance below!" 🚀
+                  </p>
+                )}
+
+                {/* Button */}
+                <button
+                  className="w-full mt-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold tracking-wide rounded-lg shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200"
+                  onClick={() => navigate('/attendance')}
+                >
+                  {!todayAttendance?.checkIn
+                    ? 'Check In'
+                    : !todayAttendance?.checkOut
+                      ? 'Check Out'
+                      : 'View Attendance'}
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="p-4 bg-green-50 rounded-lg shadow-inner hover:bg-green-100 transition">
-            <p className="text-sm font-medium text-gray-500">Check-Out</p>
-            <p className="text-xl font-semibold text-green-700 mt-1">
-              {todayAttendance.checkOut?.time ? formatTime(todayAttendance.checkOut.time) : 'Not checked out'}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="text-center py-8">
-          <p className="text-gray-500 text-sm">No attendance record for today</p>
-        </div>
-      )}
-    </div>
-
-    <div className="mt-[115px] text-center space-y-4">
-  {/* Motivational/Informational Quotes Based on Attendance State */}
-  {!todayAttendance?.checkIn ? (
-    <p className="text-gray-500 text-sm text-[16px]">
-      "Every new day is a fresh start. Let’s make it productive!" 🌞
-    </p>
-  ) : !todayAttendance?.checkOut ? (
-    <p className="text-gray-500 font-sm text-[16px]">
-      "Great job showing up! Now finish strong and check out when you're done." 💪
-    </p>
-  ) : (
-    <p className="text-blue-700 italic text-[16px]">
-      "You've completed today's journey. See your performance below!" 🚀
-    </p>
-  )}
-
-  {/* Button */}
-  <button
-    className="w-full mt-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold tracking-wide rounded-lg shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200"
-    onClick={() => navigate('/attendance')}
-  >
-    {!todayAttendance?.checkIn
-      ? 'Check In'
-      : !todayAttendance?.checkOut
-      ? 'Check Out'
-      : 'View Attendance'}
-  </button>
-</div>
-
-  </div>
-</div>
-
-          
           {/* Profile Card */}
-         
-          <div className="px-6 py-8 sm:p-10 bg-[#ffffff] shadow-xl rounded-2xl transition-all duration-300 hover:shadow-2xl">
-  <h3 className="text-3xl font-bold text-purple-700 mb-4 border-b border-gray-800 pb-2 flex items-center gap-2">
-    <span className="text-3xl mb-1">👤</span> My Profile
-  </h3>
 
-  <div className="space-y-2 text-[16px] text-gray-800 leading-relaxed tracking-wide">
-    <p>
-      <span className="font-semibold text-gray-900 inline-block w-40">Name:</span>
-      <span className="text-blue-900">{user?.fullName?.first} {user?.fullName?.last}</span>
-    </p>
-    {/* <p>
+          <div className="px-6 py-8 sm:p-10 bg-[#ffffff] shadow-xl rounded-2xl transition-all duration-300 hover:shadow-2xl">
+            <h3 className="text-3xl font-bold text-purple-700 mb-4 border-b border-gray-800 pb-2 flex items-center gap-2">
+              <span className="text-3xl mb-1">👤</span> My Profile
+            </h3>
+
+            <div className="space-y-2 text-[16px] text-gray-800 leading-relaxed tracking-wide">
+              <p>
+                <span className="font-semibold text-gray-900 inline-block w-40">Name:</span>
+                <span className="text-blue-900">
+                  {user?.fullName?.first} {user?.fullName?.last}
+                </span>
+              </p>
+              {/* <p>
       <span className="font-semibold text-gray-900 inline-block w-40">Email:</span>
       <span className="text-blue-900">{user?.email}</span>
     </p> */}
-    <p>
-      <span className="font-semibold text-gray-900 inline-block w-40">Department:</span>
-      <span className="text-blue-900">{user?.department}</span>
-    </p>
-    <p>
-      <span className="font-semibold text-gray-900 inline-block w-40">Designation:</span>
-      <span className="text-blue-900">{user?.designation}</span>
-    </p>
-    <p>
-      <span className="font-semibold text-gray-900 inline-block w-40">Joining Date:</span>
-      <span className="text-blue-900">
-        {user?.joiningDate ? formatDate(user.joiningDate) : 'Not available'}
-      </span>
-    </p>
-    <p>
-      <span className="font-semibold text-gray-900 inline-block w-40">Address:</span>
-      <span className="text-blue-900">{user?.address || '-'}</span>
-    </p>
-    <p>
-      <span className="font-semibold text-gray-900 inline-block w-40">City:</span>
-      <span className="text-blue-900">{user?.city || '-'}</span>
-    </p>
-    <p>
-      <span className="font-semibold text-gray-900 inline-block w-40">State:</span>
-      <span className="text-blue-900">{user?.state || '-'}</span>
-    </p>
-    <p>
-      <span className="font-semibold text-gray-900 inline-block w-40">Country:</span>
-      <span className="text-blue-900">{user?.country || '-'}</span>
-    </p>
-    <p>
-      <span className="font-semibold text-gray-900 inline-block w-40">Postal Code:</span>
-      <span className="text-blue-900">{user?.postalCode || '-'}</span>
-    </p>
-  </div>
+              <p>
+                <span className="font-semibold text-gray-900 inline-block w-40">Department:</span>
+                <span className="text-blue-900">{user?.department}</span>
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900 inline-block w-40">Designation:</span>
+                <span className="text-blue-900">{user?.designation}</span>
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900 inline-block w-40">Joining Date:</span>
+                <span className="text-blue-900">
+                  {user?.joiningDate ? formatDate(user.joiningDate) : 'Not available'}
+                </span>
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900 inline-block w-40">Address:</span>
+                <span className="text-blue-900">{user?.address || '-'}</span>
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900 inline-block w-40">City:</span>
+                <span className="text-blue-900">{user?.city || '-'}</span>
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900 inline-block w-40">State:</span>
+                <span className="text-blue-900">{user?.state || '-'}</span>
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900 inline-block w-40">Country:</span>
+                <span className="text-blue-900">{user?.country || '-'}</span>
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900 inline-block w-40">Postal Code:</span>
+                <span className="text-blue-900">{user?.postalCode || '-'}</span>
+              </p>
+            </div>
 
-  {/* Uncomment to enable Edit Profile button */}
-  {/*
+            {/* Uncomment to enable Edit Profile button */}
+            {/*
   <div className="mt-8">
     <button
       className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:scale-105 hover:shadow-xl transition duration-200"
@@ -409,13 +438,8 @@ function EmployeeDashboardPage() {
     </button>
   </div>
   */}
-</div>
-
- 
-
-          
+          </div>
         </div>
-      
 
         {/* Tabs */}
         <div className="mb-6 border-b border-gray-200">
@@ -447,7 +471,9 @@ function EmployeeDashboardPage() {
         {activeTab === 'attendance' && (
           <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-6">
             <div className="px-4 py-5 sm:px-6 bg-gradient-to-r from-blue-500 to-blue-600">
-              <h3 className="text-lg leading-6 font-medium text-white">Monthly Attendance Summary</h3>
+              <h3 className="text-lg leading-6 font-medium text-white">
+                Monthly Attendance Summary
+              </h3>
             </div>
             <div className="px-4 py-5 sm:p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -455,61 +481,105 @@ function EmployeeDashboardPage() {
                 <div className="space-y-4">
                   <div className="bg-green-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-500">Present Days</p>
-                    <p className="text-2xl font-bold text-green-600">{attendanceSummary.present || 0}</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {attendanceSummary.present || 0}
+                    </p>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div className="bg-green-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.present || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
+                      <div
+                        className="bg-green-500 h-2 rounded-full"
+                        style={{
+                          width: `${((attendanceSummary.present || 0) / (attendanceSummary.workingDays || 1)) * 100}%`,
+                        }}
+                      ></div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-red-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-500">Absent Days</p>
-                    <p className="text-2xl font-bold text-red-600">{attendanceSummary.absent || 0}</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {attendanceSummary.absent || 0}
+                    </p>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div className="bg-red-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.absent || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
+                      <div
+                        className="bg-red-500 h-2 rounded-full"
+                        style={{
+                          width: `${((attendanceSummary.absent || 0) / (attendanceSummary.workingDays || 1)) * 100}%`,
+                        }}
+                      ></div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-500">Late Days</p>
-                    <p className="text-2xl font-bold text-blue-600">{attendanceSummary.late || 0}</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {attendanceSummary.late || 0}
+                    </p>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.late || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
+                      <div
+                        className="bg-blue-500 h-2 rounded-full"
+                        style={{
+                          width: `${((attendanceSummary.late || 0) / (attendanceSummary.workingDays || 1)) * 100}%`,
+                        }}
+                      ></div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-yellow-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-500">Half Days</p>
-                    <p className="text-2xl font-bold text-yellow-600">{attendanceSummary.halfDay || 0}</p>
+                    <p className="text-2xl font-bold text-yellow-600">
+                      {attendanceSummary.halfDay || 0}
+                    </p>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${((attendanceSummary.halfDay || 0) / (attendanceSummary.workingDays || 1)) * 100}%` }}></div>
+                      <div
+                        className="bg-yellow-500 h-2 rounded-full"
+                        style={{
+                          width: `${((attendanceSummary.halfDay || 0) / (attendanceSummary.workingDays || 1)) * 100}%`,
+                        }}
+                      ></div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-500">Working Days</p>
-                    <p className="text-2xl font-bold text-gray-600">{attendanceSummary.workingDays || 0}</p>
+                    <p className="text-2xl font-bold text-gray-600">
+                      {attendanceSummary.workingDays || 0}
+                    </p>
                   </div>
                 </div>
-                
+
                 {/* Right Column - Calendar */}
                 <div className="md:col-span-2">
                   {/* Month Navigation */}
                   <div className="flex justify-between items-center mb-4">
-                    <button 
-                      onClick={previousMonth}
-                      className="p-2 rounded-full hover:bg-gray-200"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                    <button onClick={previousMonth} className="p-2 rounded-full hover:bg-gray-200">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     </button>
-                    <h3 className="text-lg font-medium">{monthNames[currentMonth]} {currentYear}</h3>
-                    <button 
-                      onClick={nextMonth}
-                      className="p-2 rounded-full hover:bg-gray-200"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    <h3 className="text-lg font-medium">
+                      {monthNames[currentMonth]} {currentYear}
+                    </h3>
+                    <button onClick={nextMonth} className="p-2 rounded-full hover:bg-gray-200">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     </button>
                   </div>
@@ -547,17 +617,18 @@ function EmployeeDashboardPage() {
                     <div>
                       {/* Day headers */}
                       <div className="grid grid-cols-7 gap-1 mb-1">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                          <div key={day} className="text-center font-medium text-sm py-2 bg-gray-100">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                          <div
+                            key={day}
+                            className="text-center font-medium text-sm py-2 bg-gray-100"
+                          >
                             {day}
                           </div>
                         ))}
                       </div>
-                      
+
                       {/* Calendar grid */}
-                      <div className="grid grid-cols-7 gap-1">
-                        {renderCalendar()}
-                      </div>
+                      <div className="grid grid-cols-7 gap-1">{renderCalendar()}</div>
                     </div>
                   )}
                 </div>
@@ -567,9 +638,7 @@ function EmployeeDashboardPage() {
         )}
 
         {/* Company Holidays Tab */}
-        {activeTab === 'holidays' && (
-          <EmployeeHolidayCalendar />
-        )}
+        {activeTab === 'holidays' && <EmployeeHolidayCalendar />}
 
         {/* Quick Actions */}
         <div className="bg-white mt-5 shadow-lg rounded-lg overflow-hidden">
@@ -582,8 +651,19 @@ function EmployeeDashboardPage() {
                 onClick={() => navigate('/attendance')}
                 className="flex flex-col items-center justify-center p-4 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-8 w-8 text-blue-600 mb-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                  />
                 </svg>
                 <span className="text-sm font-medium text-gray-700">Mark Attendance</span>
               </button>
@@ -591,8 +671,19 @@ function EmployeeDashboardPage() {
                 onClick={() => navigate('/leave')}
                 className="flex flex-col items-center justify-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-8 w-8 text-green-600 mb-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
                 <span className="text-sm font-medium text-gray-700">Request Leave</span>
               </button>
@@ -600,38 +691,56 @@ function EmployeeDashboardPage() {
                 onClick={() => navigate('/attendance')}
                 className="flex flex-col items-center justify-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-8 w-8 text-purple-600 mb-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
                 </svg>
                 <span className="text-sm font-medium text-gray-700">View Reports</span>
               </button>
-              <button  
-              onClick={() => setShowProfileModal(true)}
+              <button
+                onClick={() => setShowProfileModal(true)}
                 className="flex flex-col items-center justify-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-yellow-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-8 w-8 text-yellow-600 mb-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
                 </svg>
-                <span className="text-sm font-medium text-gray-700">My Profile
-                  
-                </span>
+                <span className="text-sm font-medium text-gray-700">My Profile</span>
               </button>
             </div>
           </div>
         </div>
 
         {showProfileModal && (
-          <MyProfile 
-            user={user} 
-            onClose={() => setShowProfileModal(false)} 
+          <MyProfile
+            user={user}
+            onClose={() => setShowProfileModal(false)}
             onProfileUpdated={handleProfileUpdated}
           />
         )}
       </main>
     </div>
   );
-
-
 }
 
 export default EmployeeDashboardPage;

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
-const apiUrl = import.meta.env.REACT_APP_URL  
+const apiUrl = import.meta.env.REACT_APP_URL;
 
 function SimpleAttendanceCalendar({ employeeId, onClose }) {
   const [currentMonth, setCurrentMonth] = useState(dayjs().month());
@@ -19,14 +19,22 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
   const fetchAttendanceData = async () => {
     setLoading(true);
     try {
-      const startDate = dayjs().year(currentYear).month(currentMonth).startOf('month').format('YYYY-MM-DD');
-      const endDate = dayjs().year(currentYear).month(currentMonth).endOf('month').format('YYYY-MM-DD');
-      
+      const startDate = dayjs()
+        .year(currentYear)
+        .month(currentMonth)
+        .startOf('month')
+        .format('YYYY-MM-DD');
+      const endDate = dayjs()
+        .year(currentYear)
+        .month(currentMonth)
+        .endOf('month')
+        .format('YYYY-MM-DD');
+
       const response = await axios.get(`${apiUrl}/api/v1/attendance/employee/${employeeId}`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { startDate, endDate }
+        params: { startDate, endDate },
       });
-      
+
       setAttendanceData(response.data.data.attendance || []);
     } catch (err) {
       console.error('Error fetching attendance data:', err);
@@ -36,20 +44,20 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
   };
 
   const getAttendanceStatus = (date) => {
-    const dayRecord = attendanceData.find(record => 
-      dayjs(record.date).format('YYYY-MM-DD') === date
+    const dayRecord = attendanceData.find(
+      (record) => dayjs(record.date).format('YYYY-MM-DD') === date
     );
-    
+
     // Check if it's a weekend
     const dayOfWeek = dayjs(date).day();
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       return { status: 'weekend', color: 'bg-gray-200' };
     }
-    
+
     if (!dayRecord) {
       return { status: 'absent', color: 'bg-red-200' };
     }
-    
+
     switch (dayRecord.status) {
       case 'present':
         return { status: 'present', color: 'bg-green-200' };
@@ -65,22 +73,22 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
   const renderCalendar = () => {
     const daysInMonth = dayjs().year(currentYear).month(currentMonth).daysInMonth();
     const firstDayOfMonth = dayjs().year(currentYear).month(currentMonth).startOf('month').day(); // 0 = Sunday
-    
+
     const days = [];
-    
+
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDayOfMonth; i++) {
       days.push(<div key={`empty-${i}`} className="h-12 border border-gray-200"></div>);
     }
-    
+
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = dayjs().year(currentYear).month(currentMonth).date(day).format('YYYY-MM-DD');
       const { status, color } = getAttendanceStatus(date);
-      
+
       days.push(
-        <div 
-          key={day} 
+        <div
+          key={day}
           className={`h-12 border border-gray-200 ${color} flex flex-col justify-between p-1 cursor-pointer hover:border-blue-500`}
           onClick={() => showDayDetails(date)}
         >
@@ -89,31 +97,37 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
         </div>
       );
     }
-    
+
     return days;
   };
 
   const showDayDetails = (date) => {
-    const dayRecord = attendanceData.find(record => 
-      dayjs(record.date).format('YYYY-MM-DD') === date
+    const dayRecord = attendanceData.find(
+      (record) => dayjs(record.date).format('YYYY-MM-DD') === date
     );
-    
+
     // Check if it's a weekend
     const dayOfWeek = dayjs(date).day();
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       alert(`${date}: Weekend`);
       return;
     }
-    
+
     if (!dayRecord) {
       alert(`${date}: Absent`);
       return;
     }
-    
-    const checkInTime = dayRecord.checkIn?.time ? dayjs(dayRecord.checkIn.time).format('hh:mm A') : 'N/A';
-    const checkOutTime = dayRecord.checkOut?.time ? dayjs(dayRecord.checkOut.time).format('hh:mm A') : 'N/A';
-    
-    alert(`Date: ${date}\nCheck-in: ${checkInTime}\nCheck-out: ${checkOutTime}\nStatus: ${dayRecord.status}`);
+
+    const checkInTime = dayRecord.checkIn?.time
+      ? dayjs(dayRecord.checkIn.time).format('hh:mm A')
+      : 'N/A';
+    const checkOutTime = dayRecord.checkOut?.time
+      ? dayjs(dayRecord.checkOut.time).format('hh:mm A')
+      : 'N/A';
+
+    alert(
+      `Date: ${date}\nCheck-in: ${checkInTime}\nCheck-out: ${checkOutTime}\nStatus: ${dayRecord.status}`
+    );
   };
 
   const previousMonth = () => {
@@ -135,28 +149,38 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
   };
 
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   // Calculate attendance statistics
-  const presentDays = attendanceData.filter(record => 
-    record.status === 'present'
-  ).length;
-  
-  const lateDays = attendanceData.filter(record => 
-    record.status === 'late'
-  ).length;
-  
-  const halfDays = attendanceData.filter(record => 
-    record.status === 'half-day'
-  ).length;
-  
+  const presentDays = attendanceData.filter((record) => record.status === 'present').length;
+
+  const lateDays = attendanceData.filter((record) => record.status === 'late').length;
+
+  const halfDays = attendanceData.filter((record) => record.status === 'half-day').length;
+
   // Calculate weekends
-  const weekendDays = Array.from({ length: dayjs().year(currentYear).month(currentMonth).daysInMonth() }, 
-    (_, i) => dayjs().year(currentYear).month(currentMonth).date(i + 1).day())
-    .filter(day => day === 0 || day === 6).length;
-  
+  const weekendDays = Array.from(
+    { length: dayjs().year(currentYear).month(currentMonth).daysInMonth() },
+    (_, i) =>
+      dayjs()
+        .year(currentYear)
+        .month(currentMonth)
+        .date(i + 1)
+        .day()
+  ).filter((day) => day === 0 || day === 6).length;
+
   // Calculate working days (excluding weekends)
   const workingDays = dayjs().year(currentYear).month(currentMonth).daysInMonth() - weekendDays;
   const absentDays = workingDays - presentDays - lateDays - halfDays;
@@ -166,12 +190,20 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
       <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 flex justify-between items-center">
           <h2 className="text-xl font-bold text-white">Employee Attendance Calendar</h2>
-          <button 
-            onClick={onClose}
-            className="text-white hover:text-gray-200"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <button onClick={onClose} className="text-white hover:text-gray-200">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -187,28 +219,40 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
                     <p className="text-sm text-gray-500">Present Days</p>
                     <p className="font-medium text-lg">{presentDays}</p>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div className="bg-green-500 h-2 rounded-full" style={{ width: `${(presentDays / workingDays) * 100}%` }}></div>
+                      <div
+                        className="bg-green-500 h-2 rounded-full"
+                        style={{ width: `${(presentDays / workingDays) * 100}%` }}
+                      ></div>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Late Days</p>
                     <p className="font-medium text-lg">{lateDays}</p>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${(lateDays / workingDays) * 100}%` }}></div>
+                      <div
+                        className="bg-blue-500 h-2 rounded-full"
+                        style={{ width: `${(lateDays / workingDays) * 100}%` }}
+                      ></div>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Half Days</p>
                     <p className="font-medium text-lg">{halfDays}</p>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${(halfDays / workingDays) * 100}%` }}></div>
+                      <div
+                        className="bg-yellow-500 h-2 rounded-full"
+                        style={{ width: `${(halfDays / workingDays) * 100}%` }}
+                      ></div>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Absent Days</p>
                     <p className="font-medium text-lg">{absentDays}</p>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div className="bg-red-500 h-2 rounded-full" style={{ width: `${(absentDays / workingDays) * 100}%` }}></div>
+                      <div
+                        className="bg-red-500 h-2 rounded-full"
+                        style={{ width: `${(absentDays / workingDays) * 100}%` }}
+                      ></div>
                     </div>
                   </div>
                   <div>
@@ -221,31 +265,47 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Attendance Rate</p>
-                    <p className="font-medium text-lg">{Math.round((presentDays / workingDays) * 100)}%</p>
+                    <p className="font-medium text-lg">
+                      {Math.round((presentDays / workingDays) * 100)}%
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             {/* Right Column - Calendar */}
             <div className="md:col-span-2">
               {/* Month Navigation */}
               <div className="flex justify-between items-center mb-4">
-                <button 
-                  onClick={previousMonth}
-                  className="p-2 rounded-full hover:bg-gray-200"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                <button onClick={previousMonth} className="p-2 rounded-full hover:bg-gray-200">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </button>
-                <h3 className="text-lg font-medium">{monthNames[currentMonth]} {currentYear}</h3>
-                <button 
-                  onClick={nextMonth}
-                  className="p-2 rounded-full hover:bg-gray-200"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                <h3 className="text-lg font-medium">
+                  {monthNames[currentMonth]} {currentYear}
+                </h3>
+                <button onClick={nextMonth} className="p-2 rounded-full hover:bg-gray-200">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </button>
               </div>
@@ -283,17 +343,15 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
                 <div>
                   {/* Day headers */}
                   <div className="grid grid-cols-7 gap-1 mb-1">
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                       <div key={day} className="text-center font-medium text-sm py-2 bg-gray-100">
                         {day}
                       </div>
                     ))}
                   </div>
-                  
+
                   {/* Calendar grid */}
-                  <div className="grid grid-cols-7 gap-1">
-                    {renderCalendar()}
-                  </div>
+                  <div className="grid grid-cols-7 gap-1">{renderCalendar()}</div>
                 </div>
               )}
             </div>

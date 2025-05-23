@@ -57,7 +57,7 @@ export default function MyProfile({ user, onClose, onProfileUpdated }) {
 
     try {
       const token = localStorage.getItem('token');
-      
+
       // Convert date from DD-MM-YYYY to YYYY-MM-DD
       let formattedDate = undefined;
       if (form.joiningDate) {
@@ -69,19 +69,15 @@ export default function MyProfile({ user, onClose, onProfileUpdated }) {
 
       const cleanForm = {
         ...form,
-        joiningDate: formattedDate
+        joiningDate: formattedDate,
       };
 
-      const res = await axios.patch(
-        `${config.API_URL}/api/v1/employee/profile`,
-        cleanForm,
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const res = await axios.patch(`${config.API_URL}/api/v1/employee/profile`, cleanForm, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
       setSuccess('Profile updated successfully!');
       if (onProfileUpdated) {
@@ -89,7 +85,8 @@ export default function MyProfile({ user, onClose, onProfileUpdated }) {
       }
     } catch (err) {
       // Show the exact error message from the server if available
-      const serverMsg = err.response?.data?.message || err.message || 'Update failed. Please try again.';
+      const serverMsg =
+        err.response?.data?.message || err.message || 'Update failed. Please try again.';
       setError(serverMsg);
     } finally {
       setLoading(false);
@@ -99,60 +96,124 @@ export default function MyProfile({ user, onClose, onProfileUpdated }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg relative border border-gray-200">
-        <button onClick={onClose} className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
-        <h2 className="text-2xl font-bold mb-6 text-center text-blue-700 tracking-wide">Edit My Profile</h2>
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl font-bold"
+        >
+          &times;
+        </button>
+        <h2 className="text-2xl font-bold mb-6 text-center text-blue-700 tracking-wide">
+          Edit My Profile
+        </h2>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Mobile</label>
-            <input type="text" name="mobile" value={form.mobile} onChange={handleChange} className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            <input
+              type="text"
+              name="mobile"
+              value={form.mobile}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+            />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Department</label>
-              <input type="text" name="department" value={form.department} onChange={handleChange} className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+              <input
+                type="text"
+                name="department"
+                value={form.department}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Designation</label>
-              <input type="text" name="designation" value={form.designation} onChange={handleChange} className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+              <input
+                type="text"
+                name="designation"
+                value={form.designation}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              />
             </div>
-          </div>          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Joining Date (DD-MM-YYYY)</label>
-            <input 
-              type="text" 
-              name="joiningDate" 
-              value={form.joiningDate} 
+          </div>{' '}
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              Joining Date (DD-MM-YYYY)
+            </label>
+            <input
+              type="text"
+              name="joiningDate"
+              value={form.joiningDate}
               onChange={handleChange}
               placeholder="15-04-2025"
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none" 
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none"
             />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Address</label>
-            <input type="text" name="address" value={form.address} onChange={handleChange} className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            <input
+              type="text"
+              name="address"
+              value={form.address}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+            />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">City</label>
-              <input type="text" name="city" value={form.city} onChange={handleChange} className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+              <input
+                type="text"
+                name="city"
+                value={form.city}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">State</label>
-              <input type="text" name="state" value={form.state} onChange={handleChange} className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+              <input
+                type="text"
+                name="state"
+                value={form.state}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Country</label>
-              <input type="text" name="country" value={form.country} onChange={handleChange} className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+              <input
+                type="text"
+                name="country"
+                value={form.country}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Postal Code</label>
-              <input type="text" name="postalCode" value={form.postalCode} onChange={handleChange} className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+              <input
+                type="text"
+                name="postalCode"
+                value={form.postalCode}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              />
             </div>
           </div>
           {error && <div className="text-red-600 text-sm text-center font-medium">{error}</div>}
-          {success && <div className="text-green-600 text-sm text-center font-medium">{success}</div>}
-          <button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white py-3 rounded-xl font-bold text-lg shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed" disabled={loading}>
+          {success && (
+            <div className="text-green-600 text-sm text-center font-medium">{success}</div>
+          )}
+          <button
+            type="submit"
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white py-3 rounded-xl font-bold text-lg shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={loading}
+          >
             {loading ? 'Updating...' : 'Update Profile'}
           </button>
         </form>

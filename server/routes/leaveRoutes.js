@@ -1,14 +1,14 @@
 import express from 'express';
-import { 
-  createLeaveRequest, 
-  getMyLeaveRequests, 
-  getPendingLeaveRequests, 
+import {
+  createLeaveRequest,
+  getMyLeaveRequests,
+  getPendingLeaveRequests,
   updateLeaveStatus,
   getApprovedLeaveRequests,
   getRejectedLeaveRequests,
   getAllLeaveRequests,
   getLeaveBalance,
-  getCompOffDates
+  getCompOffDates,
 } from '../controllers/leaveController.js';
 import { protect, restrictTo } from '../controllers/authController.js';
 

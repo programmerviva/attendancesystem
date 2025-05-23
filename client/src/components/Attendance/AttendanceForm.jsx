@@ -4,7 +4,7 @@ import { useLocation } from '../../hooks/useLocation';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 
-const apiUrl = import.meta.env.VITE_API_URL
+const apiUrl = import.meta.env.VITE_API_URL;
 
 // Office coordinates
 const OFFICE_LAT = 28.4067738;
@@ -33,11 +33,11 @@ function AttendanceForm() {
     const fetchTodayAttendance = async () => {
       try {
         const response = await axios.get(`${apiUrl}/api/v1/attendance/today`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
         setTodayAttendance(response.data.data.attendance);
       } catch (err) {
-        console.error('Error fetching today\'s attendance:', err);
+        console.error("Error fetching today's attendance:", err);
       }
     };
 
@@ -46,18 +46,17 @@ function AttendanceForm() {
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371e3; // Earth radius in meters
-    const φ1 = lat1 * Math.PI/180;
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2 - lat1) * Math.PI/180;
-    const Δλ = (lon2 - lon1) * Math.PI/180;
-  
-    const a = 
-      Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-      Math.cos(φ1) * Math.cos(φ2) *
-      Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
     return R * c; // in meters
   };
 
@@ -79,7 +78,9 @@ function AttendanceForm() {
     }
 
     if (location.accuracy && location.accuracy > 150) {
-      setError(`Location is not accurate enough (Accuracy: ${Math.round(location.accuracy)}m). Must be within 150 meters.`);
+      setError(
+        `Location is not accurate enough (Accuracy: ${Math.round(location.accuracy)}m). Must be within 150 meters.`
+      );
       setLoading(false);
       return;
     }
@@ -93,7 +94,9 @@ function AttendanceForm() {
 
     // For testing purposes, comment out this validation in development
     if (distanceFromOffice > ALLOWED_RADIUS_METERS) {
-      setError(`You are not within ${ALLOWED_RADIUS_METERS} meters of the office. Current distance: ${Math.round(distanceFromOffice)} meters`);
+      setError(
+        `You are not within ${ALLOWED_RADIUS_METERS} meters of the office. Current distance: ${Math.round(distanceFromOffice)} meters`
+      );
       setLoading(false);
       return;
     }
@@ -117,9 +120,11 @@ function AttendanceForm() {
         }
       );
 
-      setSuccess(`Attendance ${type === 'checkin' ? 'Check-In' : 'Check-Out'} marked successfully!`);
+      setSuccess(
+        `Attendance ${type === 'checkin' ? 'Check-In' : 'Check-Out'} marked successfully!`
+      );
       console.log('Attendance marked:', response.data);
-      
+
       // Update today's attendance
       setTodayAttendance(response.data.data.attendance);
     } catch (err) {
@@ -148,8 +153,17 @@ function AttendanceForm() {
             <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
                 <div className="ml-3">
@@ -163,8 +177,17 @@ function AttendanceForm() {
             <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  <svg
+                    className="h-5 w-5 text-green-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
                 <div className="ml-3">
@@ -181,13 +204,17 @@ function AttendanceForm() {
               <div>
                 <p className="text-sm text-gray-500">Check-In Time</p>
                 <p className="text-lg font-semibold">
-                  {todayAttendance?.checkIn?.time ? formatTime(todayAttendance.checkIn.time) : 'Not checked in yet'}
+                  {todayAttendance?.checkIn?.time
+                    ? formatTime(todayAttendance.checkIn.time)
+                    : 'Not checked in yet'}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Check-Out Time</p>
                 <p className="text-lg font-semibold">
-                  {todayAttendance?.checkOut?.time ? formatTime(todayAttendance.checkOut.time) : 'Not checked out yet'}
+                  {todayAttendance?.checkOut?.time
+                    ? formatTime(todayAttendance.checkOut.time)
+                    : 'Not checked out yet'}
                 </p>
               </div>
             </div>
@@ -199,16 +226,22 @@ function AttendanceForm() {
             {location ? (
               <div className="space-y-2">
                 <p className="text-sm">
-                  <span className="font-medium">Coordinates:</span> {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                  <span className="font-medium">Coordinates:</span> {location.latitude.toFixed(6)},{' '}
+                  {location.longitude.toFixed(6)}
                 </p>
                 <p className="text-sm">
-                  <span className="font-medium">Accuracy:</span> {Math.round(location.accuracy)} meters
+                  <span className="font-medium">Accuracy:</span> {Math.round(location.accuracy)}{' '}
+                  meters
                 </p>
                 <p className="text-sm">
                   <span className="font-medium">Address:</span> {address || 'Fetching address...'}
                 </p>
                 <p className="text-sm">
-                  <span className="font-medium">Distance from Office:</span> {Math.round(calculateDistance(location.latitude, location.longitude, OFFICE_LAT, OFFICE_LON))} meters
+                  <span className="font-medium">Distance from Office:</span>{' '}
+                  {Math.round(
+                    calculateDistance(location.latitude, location.longitude, OFFICE_LAT, OFFICE_LON)
+                  )}{' '}
+                  meters
                 </p>
               </div>
             ) : (
@@ -220,41 +253,101 @@ function AttendanceForm() {
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={() => handleAttendance('checkin')}
-              disabled={loading || (todayAttendance?.checkIn?.time !== undefined)}
+              disabled={loading || todayAttendance?.checkIn?.time !== undefined}
               className={`py-3 px-4 rounded-lg font-medium flex items-center justify-center
-                ${loading || (todayAttendance?.checkIn?.time !== undefined)
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-green-600 text-white hover:bg-green-700'}`}
+                ${
+                  loading || todayAttendance?.checkIn?.time !== undefined
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
             >
               {loading ? (
-                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
               ) : (
-                <svg className="mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                <svg
+                  className="mr-2 h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               )}
               {todayAttendance?.checkIn?.time !== undefined ? 'Already Checked In' : 'Check In'}
             </button>
-            
+
             <button
               onClick={() => handleAttendance('checkout')}
-              disabled={loading || !todayAttendance?.checkIn?.time || todayAttendance?.checkOut?.time !== undefined}
+              disabled={
+                loading ||
+                !todayAttendance?.checkIn?.time ||
+                todayAttendance?.checkOut?.time !== undefined
+              }
               className={`py-3 px-4 rounded-lg font-medium flex items-center justify-center
-                ${loading || !todayAttendance?.checkIn?.time || todayAttendance?.checkOut?.time !== undefined
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-red-600 text-white hover:bg-red-700'}`}
+                ${
+                  loading ||
+                  !todayAttendance?.checkIn?.time ||
+                  todayAttendance?.checkOut?.time !== undefined
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
             >
               {loading ? (
-                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
               ) : (
-                <svg className="mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <svg
+                  className="mr-2 h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               )}
               {todayAttendance?.checkOut?.time !== undefined ? 'Already Checked Out' : 'Check Out'}

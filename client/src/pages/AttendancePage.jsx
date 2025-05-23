@@ -6,11 +6,11 @@ import { useNavigate } from 'react-router-dom';
 function AttendancePage() {
   const [activeTab, setActiveTab] = useState('mark');
   const navigate = useNavigate();
-  
+
   // Check if user is logged in
   const token = localStorage.getItem('token');
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
-  
+
   if (!token || !user) {
     navigate('/login');
     return null;
@@ -23,10 +23,8 @@ function AttendancePage() {
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">Attendance Management</h1>
           <div className="flex items-center">
-            <span className="mr-4 text-gray-700">
-              {user?.fullName?.first || 'Employee'}
-            </span>
-            <button 
+            <span className="mr-4 text-gray-700">{user?.fullName?.first || 'Employee'}</span>
+            <button
               onClick={() => navigate('/employee/dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
             >

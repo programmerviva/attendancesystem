@@ -5,8 +5,8 @@ export default function initSocket(server) {
   const io = new Server(server, {
     cors: {
       origin: process.env.CLIENT_URL,
-      methods: ["GET", "POST"]
-    }
+      methods: ['GET', 'POST'],
+    },
   });
 
   io.on('connection', (socket) => {

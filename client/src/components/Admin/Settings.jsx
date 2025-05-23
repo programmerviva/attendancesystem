@@ -10,19 +10,19 @@ function Settings() {
     officeLocation: 'Main Office',
     officeHours: {
       start: '09:00',
-      end: '18:00'
+      end: '18:00',
     },
     geofenceRadius: 150,
     leaveSettings: {
       annualLeave: 24,
       sickLeave: 12,
-      casualLeave: 6
+      casualLeave: 6,
     },
     attendancePolicy: {
       lateThreshold: 30,
       halfDayThreshold: 240,
-      earlyLeaveThreshold: 30
-    }
+      earlyLeaveThreshold: 30,
+    },
   });
 
   const [editMode, setEditMode] = useState({
@@ -31,7 +31,7 @@ function Settings() {
     officeHours: false,
     geofenceRadius: false,
     leaveSettings: false,
-    attendancePolicy: false
+    attendancePolicy: false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -46,9 +46,9 @@ function Settings() {
     const fetchSettings = async () => {
       try {
         const response = await axios.get(`${apiUrl}/api/v1/settings`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         if (response.data && response.data.data && response.data.data.settings) {
           setSettings(response.data.data.settings);
         }
@@ -63,14 +63,14 @@ function Settings() {
   const handleEdit = (section) => {
     setEditMode({
       ...editMode,
-      [section]: true
+      [section]: true,
     });
   };
 
   const handleCancel = (section) => {
     setEditMode({
       ...editMode,
-      [section]: false
+      [section]: false,
     });
   };
 
@@ -80,29 +80,29 @@ function Settings() {
         ...settings,
         officeHours: {
           ...settings.officeHours,
-          [field]: value
-        }
+          [field]: value,
+        },
       });
     } else if (section === 'leaveSettings') {
       setSettings({
         ...settings,
         leaveSettings: {
           ...settings.leaveSettings,
-          [field]: parseInt(value, 10) || 0
-        }
+          [field]: parseInt(value, 10) || 0,
+        },
       });
     } else if (section === 'attendancePolicy') {
       setSettings({
         ...settings,
         attendancePolicy: {
           ...settings.attendancePolicy,
-          [field]: parseInt(value, 10) || 0
-        }
+          [field]: parseInt(value, 10) || 0,
+        },
       });
     } else {
       setSettings({
         ...settings,
-        [section]: value
+        [section]: value,
       });
     }
   };
@@ -111,11 +111,11 @@ function Settings() {
     setLoading(true);
     setError(null);
     setSuccess(null);
-    
+
     try {
       // Create payload based on section
       let payload = {};
-      
+
       if (section === 'officeHours') {
         payload = { officeHours: settings.officeHours };
       } else if (section === 'leaveSettings') {
@@ -125,32 +125,34 @@ function Settings() {
       } else {
         payload = { [section]: settings[section] };
       }
-      
+
       console.log('Saving settings:', payload);
-      
+
       // Send to server
       const response = await axios.patch(`${apiUrl}/api/v1/settings`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       // Update local settings with response data if available
       if (response.data && response.data.data && response.data.data.settings) {
         setSettings(response.data.data.settings);
       }
-      
-      setSuccess(`${section.charAt(0).toUpperCase() + section.slice(1).replace(/([A-Z])/g, ' $1')} updated successfully!`);
+
+      setSuccess(
+        `${section.charAt(0).toUpperCase() + section.slice(1).replace(/([A-Z])/g, ' $1')} updated successfully!`
+      );
       setEditMode({
         ...editMode,
-        [section]: false
+        [section]: false,
       });
-      
+
       // Fetch updated settings to ensure we have the latest data
       setTimeout(async () => {
         try {
           const refreshResponse = await axios.get(`${apiUrl}/api/v1/settings`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           });
-          
+
           if (refreshResponse.data?.data?.settings) {
             setSettings(refreshResponse.data.data.settings);
           }
@@ -158,14 +160,13 @@ function Settings() {
           console.error('Error refreshing settings:', refreshErr);
         }
       }, 500);
-      
     } catch (err) {
       console.error('Error updating settings:', err);
       setError('Failed to update settings');
     } finally {
       setLoading(false);
     }
-    
+
     // Clear success message after 3 seconds
     setTimeout(() => {
       setSuccess(null);
@@ -221,8 +222,17 @@ function Settings() {
           <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="h-5 w-5 text-green-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
               <div className="ml-3">
@@ -237,8 +247,17 @@ function Settings() {
           <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <svg
+                  className="h-5 w-5 text-red-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
               <div className="ml-3">
@@ -272,14 +291,14 @@ function Settings() {
                   <div>
                     {editMode.companyName ? (
                       <div className="space-x-2">
-                        <button 
+                        <button
                           onClick={() => handleSave('companyName')}
                           disabled={loading}
                           className="text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md text-sm"
                         >
                           {loading ? 'Saving...' : 'Save'}
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleCancel('companyName')}
                           className="text-gray-700 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md text-sm"
                         >
@@ -287,7 +306,7 @@ function Settings() {
                         </button>
                       </div>
                     ) : (
-                      <button 
+                      <button
                         onClick={() => handleEdit('companyName')}
                         className="text-blue-600 hover:text-blue-800"
                       >
@@ -296,7 +315,7 @@ function Settings() {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
                     <p className="font-medium">Office Location</p>
@@ -314,14 +333,14 @@ function Settings() {
                   <div>
                     {editMode.officeLocation ? (
                       <div className="space-x-2">
-                        <button 
+                        <button
                           onClick={() => handleSave('officeLocation')}
                           disabled={loading}
                           className="text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md text-sm"
                         >
                           {loading ? 'Saving...' : 'Save'}
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleCancel('officeLocation')}
                           className="text-gray-700 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md text-sm"
                         >
@@ -329,7 +348,7 @@ function Settings() {
                         </button>
                       </div>
                     ) : (
-                      <button 
+                      <button
                         onClick={() => handleEdit('officeLocation')}
                         className="text-blue-600 hover:text-blue-800"
                       >
@@ -340,7 +359,7 @@ function Settings() {
                 </div>
               </div>
             </div>
-            
+
             {/* Office Hours */}
             <div className="border-b border-gray-200 pb-4">
               <h3 className="text-lg font-medium mb-2">Office Hours</h3>
@@ -365,20 +384,22 @@ function Settings() {
                         />
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">{settings.officeHours.start} - {settings.officeHours.end}</p>
+                      <p className="text-sm text-gray-500">
+                        {settings.officeHours.start} - {settings.officeHours.end}
+                      </p>
                     )}
                   </div>
                   <div>
                     {editMode.officeHours ? (
                       <div className="space-x-2">
-                        <button 
+                        <button
                           onClick={() => handleSave('officeHours')}
                           disabled={loading}
                           className="text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md text-sm"
                         >
                           {loading ? 'Saving...' : 'Save'}
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleCancel('officeHours')}
                           className="text-gray-700 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md text-sm"
                         >
@@ -386,7 +407,7 @@ function Settings() {
                         </button>
                       </div>
                     ) : (
-                      <button 
+                      <button
                         onClick={() => handleEdit('officeHours')}
                         className="text-blue-600 hover:text-blue-800"
                       >
@@ -395,7 +416,7 @@ function Settings() {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
                     <p className="font-medium">Geo-fence Radius</p>
@@ -404,7 +425,9 @@ function Settings() {
                         <input
                           type="number"
                           value={settings.geofenceRadius}
-                          onChange={(e) => handleChange('geofenceRadius', null, parseInt(e.target.value, 10) || 0)}
+                          onChange={(e) =>
+                            handleChange('geofenceRadius', null, parseInt(e.target.value, 10) || 0)
+                          }
                           className="block w-24 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         />
                         <span className="ml-2 text-sm text-gray-500">meters</span>
@@ -416,14 +439,14 @@ function Settings() {
                   <div>
                     {editMode.geofenceRadius ? (
                       <div className="space-x-2">
-                        <button 
+                        <button
                           onClick={() => handleSave('geofenceRadius')}
                           disabled={loading}
                           className="text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md text-sm"
                         >
                           {loading ? 'Saving...' : 'Save'}
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleCancel('geofenceRadius')}
                           className="text-gray-700 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md text-sm"
                         >
@@ -431,7 +454,7 @@ function Settings() {
                         </button>
                       </div>
                     ) : (
-                      <button 
+                      <button
                         onClick={() => handleEdit('geofenceRadius')}
                         className="text-blue-600 hover:text-blue-800"
                       >
@@ -442,7 +465,7 @@ function Settings() {
                 </div>
               </div>
             </div>
-            
+
             {/* Leave Settings */}
             <div>
               <h3 className="text-lg font-medium mb-2">Leave Settings</h3>
@@ -450,16 +473,22 @@ function Settings() {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Annual Leave Days</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Annual Leave Days
+                      </label>
                       <input
                         type="number"
                         value={settings.leaveSettings.annualLeave}
-                        onChange={(e) => handleChange('leaveSettings', 'annualLeave', e.target.value)}
+                        onChange={(e) =>
+                          handleChange('leaveSettings', 'annualLeave', e.target.value)
+                        }
                         className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Sick Leave Days</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Sick Leave Days
+                      </label>
                       <input
                         type="number"
                         value={settings.leaveSettings.sickLeave}
@@ -468,24 +497,28 @@ function Settings() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Casual Leave Days</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Casual Leave Days
+                      </label>
                       <input
                         type="number"
                         value={settings.leaveSettings.casualLeave}
-                        onChange={(e) => handleChange('leaveSettings', 'casualLeave', e.target.value)}
+                        onChange={(e) =>
+                          handleChange('leaveSettings', 'casualLeave', e.target.value)
+                        }
                         className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
                     </div>
                   </div>
                   <div className="flex justify-end space-x-2">
-                    <button 
+                    <button
                       onClick={() => handleSave('leaveSettings')}
                       disabled={loading}
                       className="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md text-sm"
                     >
                       {loading ? 'Saving...' : 'Save Changes'}
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleCancel('leaveSettings')}
                       className="text-gray-700 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md text-sm"
                     >
@@ -498,28 +531,34 @@ function Settings() {
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium">Annual Leave Days</p>
-                      <p className="text-sm text-gray-500">{settings.leaveSettings.annualLeave} days</p>
+                      <p className="text-sm text-gray-500">
+                        {settings.leaveSettings.annualLeave} days
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium">Sick Leave Days</p>
-                      <p className="text-sm text-gray-500">{settings.leaveSettings.sickLeave} days</p>
+                      <p className="text-sm text-gray-500">
+                        {settings.leaveSettings.sickLeave} days
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium">Casual Leave Days</p>
-                      <p className="text-sm text-gray-500">{settings.leaveSettings.casualLeave} days</p>
+                      <p className="text-sm text-gray-500">
+                        {settings.leaveSettings.casualLeave} days
+                      </p>
                     </div>
                   </div>
                 </div>
               )}
               {!editMode.leaveSettings && (
                 <div className="mt-4 flex justify-end">
-                  <button 
+                  <button
                     onClick={() => handleEdit('leaveSettings')}
                     className="text-blue-600 hover:text-blue-800 font-medium"
                   >
@@ -538,53 +577,71 @@ function Settings() {
             <p className="text-sm text-gray-500 mb-4">
               Configure the thresholds for marking attendance status automatically.
             </p>
-            
+
             {editMode.attendancePolicy ? (
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Late Threshold (minutes)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Late Threshold (minutes)
+                    </label>
                     <input
                       type="number"
                       value={settings.attendancePolicy.lateThreshold}
-                      onChange={(e) => handleChange('attendancePolicy', 'lateThreshold', e.target.value)}
+                      onChange={(e) =>
+                        handleChange('attendancePolicy', 'lateThreshold', e.target.value)
+                      }
                       className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       min="1"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Minutes after office hours start to mark as late</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Minutes after office hours start to mark as late
+                    </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Half Day Threshold (minutes)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Half Day Threshold (minutes)
+                    </label>
                     <input
                       type="number"
                       value={settings.attendancePolicy.halfDayThreshold}
-                      onChange={(e) => handleChange('attendancePolicy', 'halfDayThreshold', e.target.value)}
+                      onChange={(e) =>
+                        handleChange('attendancePolicy', 'halfDayThreshold', e.target.value)
+                      }
                       className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       min="1"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Minutes after office hours start to mark as half day</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Minutes after office hours start to mark as half day
+                    </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Early Leave Threshold (minutes)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Early Leave Threshold (minutes)
+                    </label>
                     <input
                       type="number"
                       value={settings.attendancePolicy.earlyLeaveThreshold}
-                      onChange={(e) => handleChange('attendancePolicy', 'earlyLeaveThreshold', e.target.value)}
+                      onChange={(e) =>
+                        handleChange('attendancePolicy', 'earlyLeaveThreshold', e.target.value)
+                      }
                       className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       min="1"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Minutes before office hours end to mark as early leave</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Minutes before office hours end to mark as early leave
+                    </p>
                   </div>
                 </div>
                 <div className="flex justify-end space-x-2">
-                  <button 
+                  <button
                     onClick={() => handleSave('attendancePolicy')}
                     disabled={loading}
                     className="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md text-sm"
                   >
                     {loading ? 'Saving...' : 'Save Changes'}
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleCancel('attendancePolicy')}
                     className="text-gray-700 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md text-sm"
                   >
@@ -597,22 +654,28 @@ function Settings() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <p className="font-medium">Late Threshold</p>
-                    <p className="text-sm text-gray-500">{settings.attendancePolicy.lateThreshold} minutes</p>
+                    <p className="text-sm text-gray-500">
+                      {settings.attendancePolicy.lateThreshold} minutes
+                    </p>
                     <p className="text-xs text-gray-500 mt-1">After office start time</p>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <p className="font-medium">Half Day Threshold</p>
-                    <p className="text-sm text-gray-500">{settings.attendancePolicy.halfDayThreshold} minutes</p>
+                    <p className="text-sm text-gray-500">
+                      {settings.attendancePolicy.halfDayThreshold} minutes
+                    </p>
                     <p className="text-xs text-gray-500 mt-1">After office start time</p>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <p className="font-medium">Early Leave Threshold</p>
-                    <p className="text-sm text-gray-500">{settings.attendancePolicy.earlyLeaveThreshold} minutes</p>
+                    <p className="text-sm text-gray-500">
+                      {settings.attendancePolicy.earlyLeaveThreshold} minutes
+                    </p>
                     <p className="text-xs text-gray-500 mt-1">Before office end time</p>
                   </div>
                 </div>
                 <div className="flex justify-end">
-                  <button 
+                  <button
                     onClick={() => handleEdit('attendancePolicy')}
                     className="text-blue-600 hover:text-blue-800 font-medium"
                   >
@@ -621,21 +684,26 @@ function Settings() {
                 </div>
               </div>
             )}
-            
+
             <div className="mt-8 bg-blue-50 p-4 rounded-lg">
-              <h4 className="text-md font-medium text-blue-800 mb-2">How Attendance Status Works</h4>
+              <h4 className="text-md font-medium text-blue-800 mb-2">
+                How Attendance Status Works
+              </h4>
               <ul className="list-disc pl-5 space-y-2 text-sm text-blue-700">
                 <li>
                   <span className="font-medium">Present:</span> Check-in before the late threshold
                 </li>
                 <li>
-                  <span className="font-medium">Late:</span> Check-in after the late threshold but before the half-day threshold
+                  <span className="font-medium">Late:</span> Check-in after the late threshold but
+                  before the half-day threshold
                 </li>
                 <li>
-                  <span className="font-medium">Half-Day:</span> Check-in after the half-day threshold
+                  <span className="font-medium">Half-Day:</span> Check-in after the half-day
+                  threshold
                 </li>
                 <li>
-                  <span className="font-medium">Early Leave:</span> Check-out before the early leave threshold
+                  <span className="font-medium">Early Leave:</span> Check-out before the early leave
+                  threshold
                 </li>
               </ul>
             </div>
@@ -643,9 +711,7 @@ function Settings() {
         )}
 
         {/* Company Holidays Tab */}
-        {activeTab === 'holidays' && (
-          <HolidayCalendar />
-        )}
+        {activeTab === 'holidays' && <HolidayCalendar />}
       </div>
     </div>
   );
