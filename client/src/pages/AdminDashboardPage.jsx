@@ -249,7 +249,7 @@ function AdminDashboardPage() {
               </div>
             </div>
             <div className="flex items-center">
-              <button className="flex mx-4 text-gray-600 focus:outline-none">
+              <button className="flex mx-4 text-gray-600  focus:outline-none">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-6 w-6"

@@ -439,7 +439,7 @@ function AttendanceHistory() {
                 ) : (
                   <div>
                     {/* Day headers */}
-                    <div className="grid grid-cols-7 gap-1 mb-1">
+                    <div className="grid grid-cols-7 gap-2 mb-1">
                       {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                         <div key={day} className="text-center font-medium text-sm py-2 bg-gray-100">
                           {day}
@@ -448,7 +448,7 @@ function AttendanceHistory() {
                     </div>
 
                     {/* Calendar grid */}
-                    <div className="grid grid-cols-7 gap-1">{renderCalendar()}</div>
+                    <div className="grid grid-cols-7 gap-2">{renderCalendar()}</div>
                   </div>
                 )}
               </div>
