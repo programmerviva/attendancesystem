@@ -1,40 +1,51 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
-const apiUrl = import.meta.env.REACT_APP_URL;
+const apiUrl = import.meta.env.VITE_API_URL;
 
 function SimpleAttendanceCalendar({ employeeId, onClose }) {
   const [currentMonth, setCurrentMonth] = useState(dayjs().month());
   const [currentYear, setCurrentYear] = useState(dayjs().year());
   const [attendanceData, setAttendanceData] = useState([]);
+  const [employeeInfo, setEmployeeInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const token = localStorage.getItem('token');
 
   useEffect(() => {
     fetchAttendanceData();
+    
+    // Set up auto-refresh every 30 seconds to get latest attendance data
+    const refreshInterval = setInterval(() => {
+      fetchAttendanceData();
+    }, 30000);
+    
+    return () => clearInterval(refreshInterval);
   }, [currentMonth, currentYear, employeeId]);
 
   const fetchAttendanceData = async () => {
-    setLoading(true);
     try {
-      const startDate = dayjs()
-        .year(currentYear)
-        .month(currentMonth)
+      const startDate = dayjs(new Date(currentYear, currentMonth, 1))
         .startOf('month')
         .format('YYYY-MM-DD');
-      const endDate = dayjs()
-        .year(currentYear)
-        .month(currentMonth)
+      const endDate = dayjs(new Date(currentYear, currentMonth, 1))
         .endOf('month')
         .format('YYYY-MM-DD');
 
+      // Only show loading indicator on first load, not during refresh
+      if (attendanceData.length === 0) {
+        setLoading(true);
+      }
+
       const response = await axios.get(`${apiUrl}/api/v1/attendance/employee/${employeeId}`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { startDate, endDate },
+        // Add cache busting parameter to prevent caching
+        params: { startDate, endDate, _t: new Date().getTime() },
       });
 
+      console.log('Fetched attendance data:', response.data.data.attendance);
       setAttendanceData(response.data.data.attendance || []);
     } catch (err) {
       console.error('Error fetching attendance data:', err);
@@ -44,14 +55,28 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
   };
 
   const getAttendanceStatus = (date) => {
+    // Log to debug
+    console.log('Checking status for date:', date);
+    console.log('Available attendance data:', attendanceData);
+    
     const dayRecord = attendanceData.find(
       (record) => dayjs(record.date).format('YYYY-MM-DD') === date
     );
+    
+    if (dayRecord) {
+      console.log('Found record for date:', date, dayRecord);
+    }
 
-    // Check if it's a weekend
+    // Check if it's a weekend (only Sunday)
     const dayOfWeek = dayjs(date).day();
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
+    if (dayOfWeek === 0) {
       return { status: 'weekend', color: 'bg-gray-200' };
+    }
+    
+    // Check if it's a future date
+    const today = dayjs().format('YYYY-MM-DD');
+    if (date > today) {
+      return { status: 'upcoming', color: 'bg-white' };
     }
 
     if (!dayRecord) {
@@ -71,8 +96,8 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
   };
 
   const renderCalendar = () => {
-    const daysInMonth = dayjs().year(currentYear).month(currentMonth).daysInMonth();
-    const firstDayOfMonth = dayjs().year(currentYear).month(currentMonth).startOf('month').day(); // 0 = Sunday
+    const daysInMonth = dayjs(new Date(currentYear, currentMonth, 1)).daysInMonth();
+    const firstDayOfMonth = dayjs(new Date(currentYear, currentMonth, 1)).day(); // 0 = Sunday
 
     const days = [];
 
@@ -83,7 +108,7 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
 
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = dayjs().year(currentYear).month(currentMonth).date(day).format('YYYY-MM-DD');
+      const date = dayjs(new Date(currentYear, currentMonth, day)).format('YYYY-MM-DD');
       const { status, color } = getAttendanceStatus(date);
 
       days.push(
@@ -102,13 +127,16 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
   };
 
   const showDayDetails = (date) => {
+    console.log('Showing details for date:', date);
+    console.log('Current attendance data:', attendanceData);
+    
     const dayRecord = attendanceData.find(
       (record) => dayjs(record.date).format('YYYY-MM-DD') === date
     );
 
-    // Check if it's a weekend
+    // Check if it's a weekend (only Sunday)
     const dayOfWeek = dayjs(date).day();
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
+    if (dayOfWeek === 0) {
       alert(`${date}: Weekend`);
       return;
     }
@@ -170,27 +198,75 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
 
   const halfDays = attendanceData.filter((record) => record.status === 'half-day').length;
 
-  // Calculate weekends
+  // Calculate total days in month
+  const daysInMonth = dayjs(new Date(currentYear, currentMonth, 1)).daysInMonth();
+  
+  // Calculate weekends (only Sundays)
   const weekendDays = Array.from(
-    { length: dayjs().year(currentYear).month(currentMonth).daysInMonth() },
+    { length: daysInMonth },
     (_, i) =>
-      dayjs()
-        .year(currentYear)
-        .month(currentMonth)
-        .date(i + 1)
+      dayjs(new Date(currentYear, currentMonth, i + 1))
         .day()
-  ).filter((day) => day === 0 || day === 6).length;
+  ).filter((day) => day === 0).length;
+  
+  // Calculate total working days (all days minus Sundays)
+  const totalWorkingDays = daysInMonth - weekendDays;
+  
+  console.log(`Month: ${currentMonth + 1}, Year: ${currentYear}, Days in month: ${daysInMonth}, Weekends: ${weekendDays}, Working days: ${totalWorkingDays}`);
 
-  // Calculate working days (excluding weekends)
-  const workingDays = dayjs().year(currentYear).month(currentMonth).daysInMonth() - weekendDays;
-  const absentDays = workingDays - presentDays - lateDays - halfDays;
+  // Get current date info
+  const today = dayjs();
+  const isCurrentMonth = currentYear === today.year() && currentMonth === today.month();
+  
+  // For display purposes, always show total working days for the month
+  const workingDaysTotal = totalWorkingDays;
+  
+  // Calculate absent days based on month type
+  let absentDays;
+  
+  if (isCurrentMonth) {
+    // For current month, only count days up to today
+    const todayDate = today.date();
+    
+    // Count Sundays up to today
+    const sundaysUpToToday = Array.from(
+      { length: todayDate },
+      (_, i) => dayjs(new Date(currentYear, currentMonth, i + 1)).day()
+    ).filter(day => day === 0).length;
+    
+    // Working days up to today = today's date - Sundays up to today
+    const workingDaysUpToToday = todayDate - sundaysUpToToday;
+    
+    // Absent days = working days up to today - marked attendance
+    absentDays = Math.max(0, workingDaysUpToToday - presentDays - lateDays - halfDays);
+    
+    console.log(`Current month: Today=${todayDate}, Sundays=${sundaysUpToToday}, Working days=${workingDaysUpToToday}, Absent=${absentDays}`);
+  } else if (currentYear < today.year() || (currentYear === today.year() && currentMonth < today.month())) {
+    // For past months, count all working days
+    absentDays = Math.max(0, totalWorkingDays - presentDays - lateDays - halfDays);
+    console.log(`Past month: Working days=${totalWorkingDays}, Absent=${absentDays}`);
+  } else {
+    // For future months, no absent days
+    absentDays = 0;
+    console.log(`Future month: No absent days`);
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-white">Employee Attendance Calendar</h2>
-          <button onClick={onClose} className="text-white hover:text-gray-200">
+          <div>
+            <h2 className="text-xl font-bold text-white">Employee Attendance Calendar</h2>
+            <p className="text-sm text-blue-100">Last updated: {new Date().toLocaleTimeString()}</p>
+          </div>
+          <div>
+            <button 
+              onClick={fetchAttendanceData} 
+              className="mr-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+            >
+              Refresh Data
+            </button>
+            <button onClick={onClose} className="text-white hover:text-gray-200">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-6 w-6"
@@ -206,6 +282,7 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
               />
             </svg>
           </button>
+          </div>
         </div>
 
         <div className="p-6">
@@ -221,7 +298,7 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                       <div
                         className="bg-green-500 h-2 rounded-full"
-                        style={{ width: `${(presentDays / workingDays) * 100}%` }}
+                        style={{ width: `${(presentDays / workingDaysTotal) * 100}%` }}
                       ></div>
                     </div>
                   </div>
@@ -231,7 +308,7 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                       <div
                         className="bg-blue-500 h-2 rounded-full"
-                        style={{ width: `${(lateDays / workingDays) * 100}%` }}
+                        style={{ width: `${(lateDays / workingDaysTotal) * 100}%` }}
                       ></div>
                     </div>
                   </div>
@@ -241,7 +318,7 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                       <div
                         className="bg-yellow-500 h-2 rounded-full"
-                        style={{ width: `${(halfDays / workingDays) * 100}%` }}
+                        style={{ width: `${(halfDays / workingDaysTotal) * 100}%` }}
                       ></div>
                     </div>
                   </div>
@@ -251,7 +328,7 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                       <div
                         className="bg-red-500 h-2 rounded-full"
-                        style={{ width: `${(absentDays / workingDays) * 100}%` }}
+                        style={{ width: `${(absentDays / (absentDays + presentDays + lateDays + halfDays || 1)) * 100}%` }}
                       ></div>
                     </div>
                   </div>
@@ -261,12 +338,12 @@ function SimpleAttendanceCalendar({ employeeId, onClose }) {
                   </div>
                   <div className="pt-4 border-t border-gray-200">
                     <p className="text-sm text-gray-500">Total Working Days</p>
-                    <p className="font-medium text-lg">{workingDays}</p>
+                    <p className="font-medium text-lg">{workingDaysTotal}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Attendance Rate</p>
                     <p className="font-medium text-lg">
-                      {Math.round((presentDays / workingDays) * 100)}%
+                      {Math.round((presentDays / workingDaysTotal) * 100)}%
                     </p>
                   </div>
                 </div>

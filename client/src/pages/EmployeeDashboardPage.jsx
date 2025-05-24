@@ -115,7 +115,7 @@ function EmployeeDashboardPage() {
       const late = records.filter((r) => r.status === 'late').length;
       const halfDay = records.filter((r) => r.status === 'half-day').length;
 
-      // Calculate working days (excluding weekends)
+      // Calculate working days (excluding weekends - only Sundays)
       const daysInMonth = dayjs().year(currentYear).month(currentMonth).daysInMonth();
       const weekendDays = Array.from({ length: daysInMonth }, (_, i) =>
         dayjs()
@@ -123,7 +123,7 @@ function EmployeeDashboardPage() {
           .month(currentMonth)
           .date(i + 1)
           .day()
-      ).filter((day) => day === 0 || day === 6).length;
+      ).filter((day) => day === 0).length;
 
       const workingDays = daysInMonth - weekendDays;
 
@@ -166,9 +166,9 @@ function EmployeeDashboardPage() {
   };
 
   const getAttendanceStatus = (date) => {
-    // Check if it's a weekend
+    // Check if it's a weekend (only Sunday)
     const dayOfWeek = dayjs(date).day();
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
+    if (dayOfWeek === 0) {
       return { status: 'weekend', color: 'bg-gray-200' };
     }
 
