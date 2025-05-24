@@ -17,6 +17,7 @@ function EmployeeAttendanceDashboard({ employeeId, onClose }) {
   useEffect(() => {
     fetchEmployeeData();
     fetchAttendanceData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employeeId, currentMonth, currentYear]);
 
   const fetchEmployeeData = async () => {
