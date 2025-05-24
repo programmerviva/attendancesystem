@@ -133,3 +133,25 @@ The Attendance System is a robust and scalable solution designed to streamline e
 ## Folder Structure
 
 ### Client
+
+client/ ├── src/ │ ├── components/ # Reusable UI components │ ├── pages/ # Page-level components │ ├── context/ # Context API for state management │ ├── hooks/ # Custom React hooks │ ├── assets/ # Static assets (images, icons, etc.) │ └── config.js # Configuration file for API endpoints
+
+### server
+
+server/ ├── controllers/ # Business logic for routes ├── models/ # Mongoose models for MongoDB ├── routes/ # API route definitions ├── utils/ # Utility functions ├── server.js # Entry point for the backend └── .env # Environment variables
+
+---
+
+## Future Enhancements
+1. **Biometric Integration**: Add support for fingerprint or facial recognition for attendance marking.
+2. **Shift Management**: Allow admins to define and manage employee shifts.
+3. **Leave Management**: Integrate a leave request and approval system.
+4. **Multi-Language Support**: Add support for multiple languages for better accessibility.
+
+---
+
+## Contact
+For any queries or support, please contact the development team at [support@company.com](sd.vikasvaibhav@company.com).
+
+
+This detailed Readme.md file is structured to provide a comprehensive overview of the project, making it easy to understand and present. Let me know if you need further refinements!This detailed Readme.md file is structured to provide a comprehensive overview of the project, making it easy to understand and present. Let me know if you need further refinements!
