@@ -22,13 +22,21 @@ const ForgotPasswordPage = () => {
     setIsLoading(true);
     setError(null);
     setMessage(null);
+    
     try {
       let payload = {};
       if (mode === 'admin') {
         payload.email = email;
       } else {
+        // Validate that employee ID starts with PF prefix
+        if (!userId.startsWith('PF')) {
+          setError('Employee User ID must start with PF prefix');
+          setIsLoading(false);
+          return;
+        }
         payload.userId = userId;
       }
+      
       // Check if user exists (verify only, no email send)
       const res = await axios.post(`${apiUrl}/api/v1/auth/checkEmail`, payload);
       if (res.data && res.data.exists) {
@@ -36,8 +44,7 @@ const ForgotPasswordPage = () => {
         if (mode === 'admin') {
           sessionStorage.setItem('resetEmail', email);
         } else {
-          // For employee, get email by userId (API should support this, else use userId directly)
-          // For now, assume userId is email for direct reset
+          // For employee, save userId with PF prefix
           sessionStorage.setItem('resetEmail', userId);
         }
         navigate('/direct-reset');
@@ -45,8 +52,8 @@ const ForgotPasswordPage = () => {
       } else {
         setError('No user found with this credential.');
       }
-    } catch {
-      setError('No user found with this credential.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'No user found with this credential.');
     } finally {
       setIsLoading(false);
     }

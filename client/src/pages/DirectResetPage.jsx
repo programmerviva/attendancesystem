@@ -39,10 +39,14 @@ const DirectResetPage = () => {
     setMessage(null);
 
     try {
+      // Ensure userId has PF prefix if it's not an email
+      const isEmail = email.includes('@');
+      const userId = !isEmail && !email.startsWith('PF') ? `PF${email}` : email;
+      
       await axios.post(`${apiUrl}/api/v1/auth/directReset`, {
         // If email looks like an email, send as email, else treat as userId
-        email: email.includes('@') ? email : undefined,
-        userId: email.includes('@') ? undefined : email,
+        email: isEmail ? email : undefined,
+        userId: isEmail ? undefined : userId,
         password,
         confirmPassword,
       });

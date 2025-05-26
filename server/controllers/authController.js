@@ -180,8 +180,12 @@ export const forgotPassword = async (req, res, next) => {
       admin = await Admin.findOne({ email });
     }
     if (userId) {
-      // Remove PF prefix if present
-      const searchUserId = userId.startsWith('PF') ? userId.substring(2) : userId;
+      // Require PF prefix for employee password reset
+      if (!userId.startsWith('PF')) {
+        return next(new AppError('Employee User ID must start with PF prefix', 400));
+      }
+      // Remove PF prefix for database lookup
+      const searchUserId = userId.substring(2);
       user = await User.findOne({ userId: searchUserId });
     } else if (email && !admin) {
       // If not admin, try user by email
@@ -299,8 +303,12 @@ export const checkEmail = async (req, res, next) => {
       admin = await Admin.findOne({ email });
     }
     if (userId) {
-      // Remove PF prefix if present
-      const searchUserId = userId.startsWith('PF') ? userId.substring(2) : userId;
+      // Require PF prefix for employee ID check
+      if (!userId.startsWith('PF')) {
+        return next(new AppError('Employee User ID must start with PF prefix', 400));
+      }
+      // Remove PF prefix for database lookup
+      const searchUserId = userId.substring(2);
       user = await User.findOne({ userId: searchUserId });
     } else if (email && !admin) {
       // If not admin, try user by email
@@ -330,8 +338,12 @@ export const directReset = async (req, res, next) => {
       user = await User.findOne({ email });
     }
     if (userId) {
-      // Remove PF prefix if present
-      const searchUserId = userId.startsWith('PF') ? userId.substring(2) : userId;
+      // Require PF prefix for employee password reset
+      if (!userId.startsWith('PF')) {
+        return next(new AppError('Employee User ID must start with PF prefix', 400));
+      }
+      // Remove PF prefix for database lookup
+      const searchUserId = userId.substring(2);
       user = await User.findOne({ userId: searchUserId });
     }
     if (!user && !admin) {
