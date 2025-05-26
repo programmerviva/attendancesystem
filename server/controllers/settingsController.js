@@ -73,7 +73,12 @@ export const updateSettings = async (req, res, next) => {
     } else {
       // Update settings with request body
       Object.keys(req.body).forEach((key) => {
-        settings[key] = req.body[key];
+        // Ensure geofenceRadius is stored as a number with decimal precision
+        if (key === 'geofenceRadius' && req.body[key]) {
+          settings[key] = parseFloat(req.body[key]);
+        } else {
+          settings[key] = req.body[key];
+        }
       });
 
       await settings.save();

@@ -1,5 +1,6 @@
 import Attendance from '../models/Attendance.js';
 import User from '../models/User.js';
+import Settings from '../models/Settings.js';
 import AppError from '../utils/appError.js';
 import dayjs from 'dayjs';
 
@@ -12,6 +13,42 @@ export const createAttendance = async (req, res, next) => {
     // Validate type
     if (!['checkin', 'checkout'].includes(type)) {
       return next(new AppError('Type must be either checkin or checkout', 400));
+    }
+    
+    // Get system settings for geofence radius
+    const settings = await Settings.findOne();
+    const geofenceRadius = settings ? settings.geofenceRadius : 150; // Default to 150m if no settings
+    
+    // Calculate distance from office
+    const OFFICE_LAT = 28.4067738;
+    const OFFICE_LON = 77.0414672;
+    
+    // Function to calculate distance between two coordinates
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+      const R = 6371e3; // Earth radius in meters
+      const φ1 = (lat1 * Math.PI) / 180;
+      const φ2 = (lat2 * Math.PI) / 180;
+      const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+      const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+      const a =
+        Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+        Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return R * c; // in meters
+    };
+    
+    const distanceFromOffice = calculateDistance(latitude, longitude, OFFICE_LAT, OFFICE_LON);
+    
+    // Validate distance - ensure strict enforcement of geofence radius
+    // Round to 2 decimal places for more precise comparison
+    const roundedDistance = Math.round(distanceFromOffice * 100) / 100;
+    const roundedRadius = Math.round(geofenceRadius * 100) / 100;
+    
+    if (roundedDistance > roundedRadius) {
+      return next(new AppError(`You are not within ${geofenceRadius} meters of the office. Current distance: ${roundedDistance} meters`, 400));
     }
 
     // Get today's date in YYYY-MM-DD format

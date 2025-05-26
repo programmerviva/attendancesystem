@@ -85,7 +85,7 @@ const ForgotPasswordPage = () => {
           <div className="relative px-8 pt-10 pb-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-white tracking-tight">Reset Password</h2>
-              <p className="mt-2 text-gray-400">Enter your email to verify your account</p>
+              <p className="mt-2 text-gray-400">Enter your email/userId to verify your account</p>
             </div>
 
             {message && (

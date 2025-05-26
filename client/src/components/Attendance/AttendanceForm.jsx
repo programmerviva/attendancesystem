@@ -9,7 +9,6 @@ const apiUrl = import.meta.env.VITE_API_URL;
 // Office coordinates
 const OFFICE_LAT = 28.4067738;
 const OFFICE_LON = 77.0414672;
-const ALLOWED_RADIUS_METERS = 150;
 
 function AttendanceForm() {
   const [location, locationError, address] = useLocation();
@@ -17,6 +16,7 @@ function AttendanceForm() {
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
   const [todayAttendance, setTodayAttendance] = useState(null);
+  const [settings, setSettings] = useState({ geofenceRadius: 150 }); // Default to 150m until settings are loaded
   const navigate = useNavigate();
 
   // Get token from localStorage
@@ -41,7 +41,23 @@ function AttendanceForm() {
       }
     };
 
+    // Fetch system settings to get the geofence radius
+    const fetchSettings = async () => {
+      try {
+        const response = await axios.get(`${apiUrl}/api/v1/settings`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.data?.data?.settings) {
+          console.log("Fetched geofence radius:", response.data.data.settings.geofenceRadius);
+          setSettings(response.data.data.settings);
+        }
+      } catch (err) {
+        console.error("Error fetching settings:", err);
+      }
+    };
+
     fetchTodayAttendance();
+    fetchSettings();
   }, [token, user, navigate]);
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -92,10 +108,20 @@ function AttendanceForm() {
       OFFICE_LON
     );
 
-    // For testing purposes, comment out this validation in development
-    if (distanceFromOffice > ALLOWED_RADIUS_METERS) {
+    // Get the current geofence radius from settings - use exact value, not just integer
+    const currentGeofenceRadius = parseFloat(settings.geofenceRadius) || 150;
+    
+    // Round to 2 decimal places for more precise comparison
+    const roundedDistance = Math.round(distanceFromOffice * 100) / 100;
+    const roundedRadius = Math.round(currentGeofenceRadius * 100) / 100;
+    
+    console.log("Current distance:", roundedDistance, "meters");
+    console.log("Allowed radius:", roundedRadius, "meters");
+
+    // Use the geofenceRadius from settings with precise comparison
+    if (roundedDistance > roundedRadius) {
       setError(
-        `You are not within ${ALLOWED_RADIUS_METERS} meters of the office. Current distance: ${Math.round(distanceFromOffice)} meters`
+        `You are not within ${currentGeofenceRadius} meters of the office. Current distance: ${roundedDistance} meters`
       );
       setLoading(false);
       return;
@@ -238,10 +264,10 @@ function AttendanceForm() {
                 </p>
                 <p className="text-sm">
                   <span className="font-medium">Distance from Office:</span>{' '}
-                  {Math.round(
-                    calculateDistance(location.latitude, location.longitude, OFFICE_LAT, OFFICE_LON)
-                  )}{' '}
-                  meters
+                  {(Math.round(
+                    calculateDistance(location.latitude, location.longitude, OFFICE_LAT, OFFICE_LON) * 100
+                  ) / 100).toFixed(2)}{' '}
+                  meters (Allowed: {parseFloat(settings.geofenceRadius).toFixed(2) || 150} meters)
                 </p>
               </div>
             ) : (
