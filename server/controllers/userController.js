@@ -57,38 +57,40 @@ export const getUser = async (req, res, next) => {
 // Create new user (for admin)
 export const createUser = async (req, res, next) => {
   try {
-    const { fullName, userId, email, password, role, department, designation, joiningDate } =
+    const { fullName, email, password, role, department, designation, joiningDate, mobile } =
       req.body;
 
-    // Check if userId already exists
-    const existingUser = await User.findOne({ userId });
-    if (existingUser) {
-      return next(new AppError('User ID already exists', 400));
-    }
-
-    // Auto-generate empId
-    let newEmpId;
-    // Find last empId (numeric only)
-    const lastUser = await User.findOne({ empId: { $ne: null } }).sort({ empId: -1 });
-    if (lastUser && lastUser.empId) {
-      // If empId is numeric, increment, else fallback to 1001
-      const lastEmpIdNum = parseInt(lastUser.empId, 10);
-      newEmpId = isNaN(lastEmpIdNum) ? '1001' : String(lastEmpIdNum + 1);
+    // Get current year
+    const currentYear = new Date().getFullYear();
+    
+    // Find the highest userId for this year
+    const latestUser = await User.find({ 
+      userId: new RegExp(`^${currentYear}`) 
+    }).sort({ userId: -1 }).limit(1);
+    
+    let newUserId;
+    
+    if (latestUser.length > 0) {
+      // Extract the sequence number and increment
+      const lastSequence = parseInt(latestUser[0].userId.substring(4), 10);
+      newUserId = `${currentYear}${(lastSequence + 1).toString().padStart(4, '0')}`;
     } else {
-      newEmpId = '1001';
+      // First employee for this year
+      newUserId = `${currentYear}0001`;
     }
 
     // Create new user
     const newUser = await User.create({
       fullName,
-      userId, // Store without PF prefix
+      userId: newUserId,
       email, // Now optional
       password,
+      mobile, // Add mobile number
       role: role || 'employee',
       department,
       designation,
       joiningDate,
-      empId: newEmpId,
+      empId: newUserId, // Use the same ID for empId
     });
 
     // Remove password from response

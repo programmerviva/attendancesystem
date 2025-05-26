@@ -16,7 +16,6 @@ function UserManagement() {
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [newUserData, setNewUserData] = useState({
     fullName: { first: '', last: '' },
-    userId: '',
     email: '',
     mobile: '',
     department: 'IT',
@@ -54,12 +53,6 @@ function UserManagement() {
         userData.password = 'password123'; // Default password
       }
 
-      // Ensure userId is set
-      if (!userData.userId || userData.userId.trim() === '') {
-        setError('User ID is required');
-        return;
-      }
-
       console.log('Creating user with data:', userData);
 
       // Send the request to our new endpoint
@@ -76,7 +69,6 @@ function UserManagement() {
       setIsCreatingUser(false);
       setNewUserData({
         fullName: { first: '', last: '' },
-        userId: '',
         email: '',
         mobile: '',
         department: 'IT',
@@ -89,7 +81,7 @@ function UserManagement() {
       fetchUsers();
 
       alert(
-        `User created successfully! Login credentials:\nUser ID: PF${userData.userId}\nPassword: ${userData.password}`
+        `User created successfully! Login credentials:\nUser ID: PF${response.data.data.user.userId}\nPassword: ${userData.password}`
       );
     } catch (err) {
       console.error('Error creating user:', err);
@@ -165,25 +157,25 @@ function UserManagement() {
                 <th className="px-3 py-3 text-left text-sm font-medium text-zinc-950 uppercase tracking-wider">
                   Full Name
                 </th>
-                <th className="px-3 py-3 text-left text-zinc-950 text-sm font-medium  font-medium uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-zinc-950 text-sm font-medium uppercase tracking-wider">
                   User ID
                 </th>
-                <th className="px-3 py-3 text-left text-zinc-950 text-sm font-medium  font-medium uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-zinc-950 text-sm font-medium uppercase tracking-wider">
                   Email
                 </th>
-                {/* <th className="px-3 py-3 text-left text-zinc-950 text-sm font-medium  font-medium uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-zinc-950 text-sm font-medium uppercase tracking-wider">
                   Mobile
-                </th> */}
-                <th className="px-3 py-3 text-left text-zinc-950 text-sm font-medium  font-medium uppercase tracking-wider">
+                </th>
+                <th className="px-3 py-3 text-left text-zinc-950 text-sm font-medium uppercase tracking-wider">
                   Department
                 </th>
-                <th className="px-3 py-3 text-left text-zinc-950 text-sm font-medium  font-medium uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-zinc-950 text-sm font-medium uppercase tracking-wider">
                   Designation
                 </th>
-                <th className="px-3 py-3 text-left text-zinc-950 text-sm font-medium  font-medium uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-zinc-950 text-sm font-medium uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-3 py-3 text-left text-zinc-950 text-sm font-medium  font-medium uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-zinc-950 text-sm font-medium uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -200,9 +192,9 @@ function UserManagement() {
                   <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-700 max-w-[140px] truncate sm:max-w-none">
                     {user.email || '-'}
                   </td>
-                  {/* <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 max-w-[120px] truncate sm:max-w-none">
-                    {user.mobile}
-                  </td> */}
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 max-w-[120px] truncate sm:max-w-none">
+                    {user.mobile || '-'}
+                  </td>
                   <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 font-medium">
                     {user.department}
                   </td>
@@ -305,23 +297,7 @@ function UserManagement() {
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="userId" className="block text-sm font-medium text-gray-700">
-                  User ID
-                </label>
-                <input
-                  type="text"
-                  id="userId"
-                  value={newUserData.userId}
-                  onChange={(e) => setNewUserData({ ...newUserData, userId: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="user123"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  System will automatically add PF prefix for login (e.g. PFuser123)
-                </p>
-              </div>
+              {/* User ID field removed as it's now auto-generated */}
 
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">

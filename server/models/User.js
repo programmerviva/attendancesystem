@@ -53,6 +53,7 @@ const userSchema = new mongoose.Schema(
     passwordChangedAt: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,
+    mobile: { type: String },
     address: { type: String },
     city: { type: String },
     state: { type: String },

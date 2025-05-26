@@ -388,10 +388,16 @@ function EmployeeDashboardPage() {
                   {user?.fullName?.first} {user?.fullName?.last}
                 </span>
               </p>
-              {/* <p>
-      <span className="font-semibold text-gray-900 inline-block w-40">Email:</span>
-      <span className="text-blue-900">{user?.email}</span>
-    </p> */}
+              <p>
+                <span className="font-semibold text-gray-900 inline-block w-40">Email:</span>
+                <span className="text-blue-900">{user?.email}</span>
+              </p>
+
+              <p>
+                <span className="font-semibold text-gray-900 inline-block w-40">Mobile:</span>
+                <span className="text-blue-900">{user?.mobile}</span>
+              </p>
+
               <p>
                 <span className="font-semibold text-gray-900 inline-block w-40">Department:</span>
                 <span className="text-blue-900">{user?.department}</span>
