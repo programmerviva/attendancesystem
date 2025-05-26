@@ -342,7 +342,7 @@ function EmployeeDashboardPage() {
                 )}
               </div>
 
-              <div className="mt-[115px] text-center space-y-4">
+              <div className="mt-[200px] text-center space-y-4">
                 {/* Motivational/Informational Quotes Based on Attendance State */}
                 {!todayAttendance?.checkIn ? (
                   <p className="text-gray-500 text-sm text-[16px]">
@@ -360,7 +360,7 @@ function EmployeeDashboardPage() {
 
                 {/* Button */}
                 <button
-                  className="w-full mt-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold tracking-wide rounded-lg shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200"
+                  className="w-full mt-10 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold tracking-wide rounded-lg shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200"
                   onClick={() => navigate('/attendance')}
                 >
                   {!todayAttendance?.checkIn
