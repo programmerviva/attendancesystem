@@ -89,8 +89,12 @@ export const login = async (req, res, next) => {
     let user;
 
     if (userId) {
-      // If userId is provided, check if it has PF prefix
-      const searchUserId = userId.startsWith('PF') ? userId.substring(2) : userId;
+      // Require PF prefix for employee login
+      if (!userId.startsWith('PF')) {
+        return next(new AppError('Employee User ID must start with PF prefix', 400));
+      }
+      // Remove PF prefix for database lookup
+      const searchUserId = userId.substring(2);
       user = await User.findOne({ userId: searchUserId }).select('+password');
     } else if (email) {
       // If email is provided

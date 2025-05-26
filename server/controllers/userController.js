@@ -66,9 +66,6 @@ export const createUser = async (req, res, next) => {
       return next(new AppError('User ID already exists', 400));
     }
 
-    // Add PF prefix to userId if not already present
-    const formattedUserId = userId.startsWith('PF') ? userId.substring(2) : userId;
-
     // Auto-generate empId
     let newEmpId;
     // Find last empId (numeric only)
@@ -84,7 +81,7 @@ export const createUser = async (req, res, next) => {
     // Create new user
     const newUser = await User.create({
       fullName,
-      userId: formattedUserId, // Store without PF prefix
+      userId, // Store without PF prefix
       email, // Now optional
       password,
       role: role || 'employee',
