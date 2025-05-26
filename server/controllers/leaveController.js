@@ -86,6 +86,9 @@ export const getLeaveBalance = async (req, res, next) => {
     // Get user's leave balance
     const user = await User.findById(userId);
 
+    // Get system settings for leave balances
+    const settings = await mongoose.model('Settings').findOne();
+    
     // Calculate financial year if not provided
     let financialYearStart, financialYearEnd;
     if (!startDate || !endDate) {
@@ -109,11 +112,11 @@ export const getLeaveBalance = async (req, res, next) => {
     // Count unused comp off dates
     const unusedCompOffDates = user.compOffDates.filter((entry) => !entry.used).length;
 
-    // Calculate leave balance
+    // Calculate leave balance using system settings if available
     const leaveBalance = {
-      sick: user.leaveBalance.sick,
-      vacation: user.leaveBalance.vacation,
-      short: user.leaveBalance.short,
+      sick: settings?.leaveSettings?.sickLeave || user.leaveBalance?.sick || 0,
+      vacation: settings?.leaveSettings?.annualLeave || user.leaveBalance?.vacation || 0,
+      short: settings?.leaveSettings?.casualLeave || user.leaveBalance?.short || 0,
       comp: unusedCompOffDates,
     };
 
