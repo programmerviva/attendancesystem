@@ -15,9 +15,10 @@ export const createAttendance = async (req, res, next) => {
       return next(new AppError('Type must be either checkin or checkout', 400));
     }
     
-    // Get system settings for geofence radius
+    // Get system settings for geofence radius and office hours
     const settings = await Settings.findOne();
     const geofenceRadius = settings ? settings.geofenceRadius : 150; // Default to 150m if no settings
+    const officeHours = settings ? settings.officeHours : { start: '09:00', end: '18:00' };
     
     // Calculate distance from office
     const OFFICE_LAT = 28.4067738;
@@ -83,13 +84,23 @@ export const createAttendance = async (req, res, next) => {
         address,
       };
 
-      // Determine status based on check-in time
-      const checkInHour = dayjs(time).hour();
-      const checkInMinute = dayjs(time).minute();
-
-      if (checkInHour < 10 || (checkInHour === 10 && checkInMinute < 30)) {
+      // Determine status based on check-in time and office hours
+      const checkInTime = dayjs(time);
+      
+      // Parse office start time from settings
+      const [startHour, startMinute] = officeHours.start.split(':').map(Number);
+      const officeStartTime = dayjs(time).hour(startHour).minute(startMinute).second(0);
+      
+      // Calculate late and half-day thresholds based on office start time and policy
+      const lateThreshold = settings?.attendancePolicy?.lateThreshold || 30; // default 30 minutes
+      const halfDayThreshold = settings?.attendancePolicy?.halfDayThreshold || 240; // default 4 hours
+      
+      const lateTime = officeStartTime.add(lateThreshold, 'minute');
+      const halfDayTime = officeStartTime.add(halfDayThreshold, 'minute');
+      
+      if (checkInTime.isBefore(lateTime)) {
         attendance.status = 'present';
-      } else if (checkInHour < 13 || (checkInHour === 13 && checkInMinute === 0)) {
+      } else if (checkInTime.isBefore(halfDayTime)) {
         attendance.status = 'late';
       } else {
         attendance.status = 'half-day';
@@ -131,7 +142,7 @@ export const createAttendance = async (req, res, next) => {
       const workHours = checkOutTime.diff(checkInTime, 'hour', true).toFixed(2);
       attendance.workHours = workHours;
 
-      // Calculate and set status based on work hours
+      // Calculate and set status based on work hours and office hours
       if (
         attendance.checkIn &&
         attendance.checkIn.time &&
@@ -143,10 +154,37 @@ export const createAttendance = async (req, res, next) => {
         const diffMs = checkOut - checkIn;
         const diffHrs = diffMs / (1000 * 60 * 60);
         attendance.workHours = parseFloat(diffHrs.toFixed(2));
-        if (attendance.workHours >= 8) {
+        
+        // Parse office hours from settings
+        const [startHour, startMinute] = officeHours.start.split(':').map(Number);
+        const [endHour, endMinute] = officeHours.end.split(':').map(Number);
+        
+        // Calculate expected work hours (end time - start time)
+        const startTime = new Date();
+        startTime.setHours(startHour, startMinute, 0);
+        
+        const endTime = new Date();
+        endTime.setHours(endHour, endMinute, 0);
+        
+        const expectedWorkHours = (endTime - startTime) / (1000 * 60 * 60);
+        const halfExpectedHours = expectedWorkHours / 2;
+        
+        // Check if checkout is early
+        const earlyLeaveThreshold = settings?.attendancePolicy?.earlyLeaveThreshold || 30; // default 30 minutes
+        const checkOutTime = dayjs(checkOut);
+        const officeEndTime = dayjs(checkOut).hour(endHour).minute(endMinute).second(0);
+        const earlyLeaveTime = officeEndTime.subtract(earlyLeaveThreshold, 'minute');
+        
+        // Determine status based on work hours and early leave
+        if (attendance.workHours >= expectedWorkHours * 0.9) { // 90% of expected hours
           attendance.status = 'present';
-        } else if (attendance.workHours >= 4) {
-          attendance.status = 'half-day';
+        } else if (attendance.workHours >= halfExpectedHours) {
+          // Check if left early
+          if (checkOutTime.isBefore(earlyLeaveTime)) {
+            attendance.status = 'early-leave';
+          } else {
+            attendance.status = 'half-day';
+          }
         } else {
           attendance.status = 'absent';
         }

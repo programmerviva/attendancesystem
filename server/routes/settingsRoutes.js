@@ -15,8 +15,8 @@ const router = express.Router();
 router.use(protect);
 
 // Settings routes
-router.get('/', protect, restrictTo('admin', 'subadmin'), getSettings);
-router.patch('/', protect, restrictTo('admin', 'subadmin'), updateSettings);
+router.get('/', getSettings); // Allow all authenticated users to get settings
+router.patch('/', restrictTo('admin', 'subadmin'), updateSettings);
 
 // Holiday routes - allow all authenticated users to view holidays
 router.get('/holidays', getHolidays);

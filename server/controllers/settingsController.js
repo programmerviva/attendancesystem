@@ -5,10 +5,7 @@ import mongoose from 'mongoose';
 // Get system settings
 export const getSettings = async (req, res, next) => {
   try {
-    // Check if user is admin or subadmin
-    if (req.user.role !== 'admin' && req.user.role !== 'subadmin') {
-      return next(new AppError('You do not have permission to perform this action', 403));
-    }
+    // Allow all authenticated users to get settings
 
     // Find settings or create default settings if none exist
     let settings = await Settings.findOne();
