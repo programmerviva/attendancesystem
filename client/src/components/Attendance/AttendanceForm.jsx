@@ -16,7 +16,7 @@ function AttendanceForm() {
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
   const [todayAttendance, setTodayAttendance] = useState(null);
-  const [settings, setSettings] = useState({ geofenceRadius: 150 }); // Default to 150m until settings are loaded
+  const [settings, setSettings] = useState({ geofenceRadius: 150 }); // Default to 150m until settings are loaded from server
   const navigate = useNavigate();
 
   // Get token from localStorage
@@ -48,8 +48,13 @@ function AttendanceForm() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.data?.data?.settings) {
-          console.log("Fetched geofence radius:", response.data.data.settings.geofenceRadius);
-          setSettings(response.data.data.settings);
+          const geofenceRadius = response.data.data.settings.geofenceRadius;
+          console.log("Fetched geofence radius:", geofenceRadius);
+          // Force update with the new geofence radius
+          setSettings(prevSettings => ({
+            ...prevSettings,
+            geofenceRadius: geofenceRadius
+          }));
         }
       } catch (err) {
         console.error("Error fetching settings:", err);
@@ -93,9 +98,11 @@ function AttendanceForm() {
       return;
     }
 
-    if (location.accuracy && location.accuracy > 150) {
+    // Use the geofence radius from settings for accuracy check
+    const accuracyThreshold = parseFloat(settings.geofenceRadius) || 150;
+    if (location.accuracy && location.accuracy > accuracyThreshold) {
       setError(
-        `Location is not accurate enough (Accuracy: ${Math.round(location.accuracy)}m). Must be within 150 meters.`
+        `Location is not accurate enough (Accuracy: ${Math.round(location.accuracy)}m). Must be within ${accuracyThreshold} meters.`
       );
       setLoading(false);
       return;
@@ -267,7 +274,7 @@ function AttendanceForm() {
                   {(Math.round(
                     calculateDistance(location.latitude, location.longitude, OFFICE_LAT, OFFICE_LON) * 100
                   ) / 100).toFixed(2)}{' '}
-                  meters (Allowed: {parseFloat(settings.geofenceRadius).toFixed(2) || 150} meters)
+                  meters (Allowed: {parseFloat(settings.geofenceRadius).toFixed(2)} meters)
                 </p>
               </div>
             ) : (
