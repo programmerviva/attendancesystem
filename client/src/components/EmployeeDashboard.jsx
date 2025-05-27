@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import { Link } from 'react-router-dom';
 import AttendanceStats from './AttendanceStats';
 import EmployeeHolidayCalendar from './EmployeeHolidayCalendar';
 import config from '../config';
@@ -9,6 +10,7 @@ function EmployeeDashboard() {
   const [user, setUser] = useState(null);
   const [todayAttendance, setTodayAttendance] = useState(null);
   const [recentLeaves, setRecentLeaves] = useState([]);
+  const [outdoorDutyRequests, setOutdoorDutyRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -36,6 +38,17 @@ function EmployeeDashboard() {
           headers: { Authorization: `Bearer ${token}` },
         });
         setRecentLeaves(leavesRes.data.data.leaves?.slice(0, 3) || []);
+
+        // Fetch recent outdoor duty requests
+        const startDate = dayjs().format('YYYY-MM-DD');
+        const endDate = dayjs().add(30, 'days').format('YYYY-MM-DD');
+        const outdoorDutyRes = await axios.get(
+          `${config.API_URL}/api/v1/outdoor-duty/my-requests?startDate=${startDate}&endDate=${endDate}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setOutdoorDutyRequests(outdoorDutyRes.data.data.outdoorDutyRequests?.slice(0, 3) || []);
 
         setError(null);
       } catch (err) {
@@ -87,6 +100,52 @@ function EmployeeDashboard() {
         </div>
       )}
 
+      {/* Quick Actions */}
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Link
+            to="/attendance"
+            className="bg-blue-50 hover:bg-blue-100 p-4 rounded-lg text-center transition duration-300"
+          >
+            <div className="text-blue-600 text-2xl mb-2">
+              <i className="fas fa-clock"></i>
+            </div>
+            <h3 className="font-medium">Attendance</h3>
+          </Link>
+          
+          <Link
+            to="/leave"
+            className="bg-green-50 hover:bg-green-100 p-4 rounded-lg text-center transition duration-300"
+          >
+            <div className="text-green-600 text-2xl mb-2">
+              <i className="fas fa-calendar-alt"></i>
+            </div>
+            <h3 className="font-medium">Leave</h3>
+          </Link>
+          
+          <Link
+            to="/outdoor-duty"
+            className="bg-purple-50 hover:bg-purple-100 p-4 rounded-lg text-center transition duration-300"
+          >
+            <div className="text-purple-600 text-2xl mb-2">
+              <i className="fas fa-briefcase"></i>
+            </div>
+            <h3 className="font-medium">Outdoor Duty</h3>
+          </Link>
+          
+          <Link
+            to="/employee/dashboard"
+            className="bg-amber-50 hover:bg-amber-100 p-4 rounded-lg text-center transition duration-300"
+          >
+            <div className="text-amber-600 text-2xl mb-2">
+              <i className="fas fa-chart-line"></i>
+            </div>
+            <h3 className="font-medium">Dashboard</h3>
+          </Link>
+        </div>
+      </div>
+
       {/* Today's Attendance Card */}
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Today's Attendance</h2>
@@ -117,9 +176,51 @@ function EmployeeDashboard() {
       {/* Attendance Statistics */}
       <AttendanceStats />
 
+      {/* Recent Outdoor Duty Requests */}
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">Recent Outdoor Duty Requests</h2>
+          <Link to="/outdoor-duty" className="text-sm text-purple-600 hover:text-purple-800">
+            View All
+          </Link>
+        </div>
+        
+        {outdoorDutyRequests.length > 0 ? (
+          <div className="space-y-4">
+            {outdoorDutyRequests.map((request) => (
+              <div key={request._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <div className="flex justify-between">
+                  <div>
+                    <p className="font-medium">
+                      Outdoor Duty Request
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {formatDate(request.date)}
+                    </p>
+                  </div>
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(request.status)}`}>
+                    {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">{request.reason}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-gray-500">No recent outdoor duty requests</p>
+          </div>
+        )}
+      </div>
+
       {/* Recent Leave Requests */}
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Recent Leave Requests</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">Recent Leave Requests</h2>
+          <Link to="/leave" className="text-sm text-green-600 hover:text-green-800">
+            View All
+          </Link>
+        </div>
         
         {recentLeaves.length > 0 ? (
           <div className="space-y-4">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLocation } from '../../hooks/useLocation';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -17,6 +17,8 @@ function AttendanceForm() {
   const [loading, setLoading] = useState(false);
   const [todayAttendance, setTodayAttendance] = useState(null);
   const [settings, setSettings] = useState({ geofenceRadius: 150 }); // Default to 150m until settings are loaded from server
+  const [hasApprovedOutdoorDuty, setHasApprovedOutdoorDuty] = useState(false);
+  const [outdoorDuty, setOutdoorDuty] = useState(null);
   const navigate = useNavigate();
 
   // Get token from localStorage
@@ -61,8 +63,22 @@ function AttendanceForm() {
       }
     };
 
+    // Check if user has approved outdoor duty for today
+    const checkOutdoorDuty = async () => {
+      try {
+        const response = await axios.get(`${apiUrl}/api/v1/outdoor-duty/check-today`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setHasApprovedOutdoorDuty(response.data.data.hasApprovedOutdoorDuty);
+        setOutdoorDuty(response.data.data.outdoorDuty);
+      } catch (err) {
+        console.error("Error checking outdoor duty status:", err);
+      }
+    };
+
     fetchTodayAttendance();
     fetchSettings();
+    checkOutdoorDuty();
   }, [token, user, navigate]);
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -86,66 +102,75 @@ function AttendanceForm() {
     setSuccess(null);
     setLoading(true);
 
-    if (locationError) {
+    if (locationError && !hasApprovedOutdoorDuty) {
       setError('Could not retrieve location: ' + locationError);
       setLoading(false);
       return;
     }
 
-    if (!location) {
+    if (!location && !hasApprovedOutdoorDuty) {
       setError('Location is required to mark attendance.');
       setLoading(false);
       return;
     }
 
-    // Use the geofence radius from settings for accuracy check
-    const accuracyThreshold = parseFloat(settings.geofenceRadius) || 150;
-    if (location.accuracy && location.accuracy > accuracyThreshold) {
-      setError(
-        `Location is not accurate enough (Accuracy: ${Math.round(location.accuracy)}m). Must be within ${accuracyThreshold} meters.`
+    // Skip location checks if user has approved outdoor duty
+    if (!hasApprovedOutdoorDuty) {
+      // Use the geofence radius from settings for accuracy check
+      const accuracyThreshold = parseFloat(settings.geofenceRadius) || 150;
+      if (location.accuracy && location.accuracy > accuracyThreshold) {
+        setError(
+          `Location is not accurate enough (Accuracy: ${Math.round(location.accuracy)}m). Must be within ${accuracyThreshold} meters.`
+        );
+        setLoading(false);
+        return;
+      }
+
+      const distanceFromOffice = calculateDistance(
+        location.latitude,
+        location.longitude,
+        OFFICE_LAT,
+        OFFICE_LON
       );
-      setLoading(false);
-      return;
-    }
 
-    const distanceFromOffice = calculateDistance(
-      location.latitude,
-      location.longitude,
-      OFFICE_LAT,
-      OFFICE_LON
-    );
+      // Get the current geofence radius from settings - use exact value, not just integer
+      const currentGeofenceRadius = parseFloat(settings.geofenceRadius) || 150;
+      
+      // Round to 2 decimal places for more precise comparison
+      const roundedDistance = Math.round(distanceFromOffice * 100) / 100;
+      const roundedRadius = Math.round(currentGeofenceRadius * 100) / 100;
+      
+      console.log("Current distance:", roundedDistance, "meters");
+      console.log("Allowed radius:", roundedRadius, "meters");
 
-    // Get the current geofence radius from settings - use exact value, not just integer
-    const currentGeofenceRadius = parseFloat(settings.geofenceRadius) || 150;
-    
-    // Round to 2 decimal places for more precise comparison
-    const roundedDistance = Math.round(distanceFromOffice * 100) / 100;
-    const roundedRadius = Math.round(currentGeofenceRadius * 100) / 100;
-    
-    console.log("Current distance:", roundedDistance, "meters");
-    console.log("Allowed radius:", roundedRadius, "meters");
-
-    // Use the geofenceRadius from settings with precise comparison
-    if (roundedDistance > roundedRadius) {
-      setError(
-        `You are not within ${currentGeofenceRadius} meters of the office. Current distance: ${roundedDistance} meters`
-      );
-      setLoading(false);
-      return;
+      // Use the geofenceRadius from settings with precise comparison
+      if (roundedDistance > roundedRadius) {
+        setError(
+          `You are not within ${currentGeofenceRadius} meters of the office. Current distance: ${roundedDistance} meters`
+        );
+        setLoading(false);
+        return;
+      }
     }
 
     const now = dayjs();
 
     try {
+      const requestData = {
+        type,
+        time: now.format(),
+      };
+
+      // Only include location data if not on outdoor duty
+      if (!hasApprovedOutdoorDuty && location) {
+        requestData.latitude = location.latitude;
+        requestData.longitude = location.longitude;
+        requestData.address = address || '';
+      }
+
       const response = await axios.post(
         `${apiUrl}/api/v1/attendance`,
-        {
-          type,
-          latitude: location.latitude,
-          longitude: location.longitude,
-          address: address || '',
-          time: now.format(),
-        },
+        requestData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -181,6 +206,16 @@ function AttendanceForm() {
         </div>
 
         <div className="p-6">
+          {/* Quick Actions */}
+          <div className="mb-6 flex justify-between">
+            <Link to="/employee/dashboard" className="text-blue-600 hover:text-blue-800">
+              &larr; Back to Dashboard
+            </Link>
+            <Link to="/outdoor-duty" className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md">
+              Request Outdoor Duty
+            </Link>
+          </div>
+
           {/* Status Messages */}
           {error && (
             <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
@@ -230,6 +265,34 @@ function AttendanceForm() {
             </div>
           )}
 
+          {/* Outdoor Duty Alert */}
+          {hasApprovedOutdoorDuty && (
+            <div className="mb-6 bg-purple-50 border-l-4 border-purple-500 p-4 rounded-md">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-purple-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-purple-800">Outdoor Duty Approved</p>
+                  <p className="text-sm text-purple-700">
+                    You have an approved outdoor duty request for today. Location verification is bypassed.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Today's Attendance Status */}
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Today's Attendance</h3>
@@ -250,37 +313,48 @@ function AttendanceForm() {
                     : 'Not checked out yet'}
                 </p>
               </div>
+              {todayAttendance?.status && (
+                <div className="col-span-2">
+                  <p className="text-sm text-gray-500">Status</p>
+                  <p className="text-lg font-semibold capitalize">
+                    {todayAttendance.status.replace(/-/g, ' ')}
+                    {todayAttendance.isOutdoorDuty && ' (Outdoor Duty)'}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Location Information */}
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-            <h3 className="text-lg font-medium text-blue-900 mb-2">Location Information</h3>
-            {location ? (
-              <div className="space-y-2">
-                <p className="text-sm">
-                  <span className="font-medium">Coordinates:</span> {location.latitude.toFixed(6)},{' '}
-                  {location.longitude.toFixed(6)}
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">Accuracy:</span> {Math.round(location.accuracy)}{' '}
-                  meters
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">Address:</span> {address || 'Fetching address...'}
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">Distance from Office:</span>{' '}
-                  {(Math.round(
-                    calculateDistance(location.latitude, location.longitude, OFFICE_LAT, OFFICE_LON) * 100
-                  ) / 100).toFixed(2)}{' '}
-                  meters (Allowed: {parseFloat(settings.geofenceRadius).toFixed(2)} meters)
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm text-blue-700">Getting your location...</p>
-            )}
-          </div>
+          {/* Location Information - Only show if not on outdoor duty */}
+          {!hasApprovedOutdoorDuty && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+              <h3 className="text-lg font-medium text-blue-900 mb-2">Location Information</h3>
+              {location ? (
+                <div className="space-y-2">
+                  <p className="text-sm">
+                    <span className="font-medium">Coordinates:</span> {location.latitude.toFixed(6)},{' '}
+                    {location.longitude.toFixed(6)}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">Accuracy:</span> {Math.round(location.accuracy)}{' '}
+                    meters
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">Address:</span> {address || 'Fetching address...'}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">Distance from Office:</span>{' '}
+                    {(Math.round(
+                      calculateDistance(location.latitude, location.longitude, OFFICE_LAT, OFFICE_LON) * 100
+                    ) / 100).toFixed(2)}{' '}
+                    meters (Allowed: {parseFloat(settings.geofenceRadius).toFixed(2)} meters)
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-blue-700">Getting your location...</p>
+              )}
+            </div>
+          )}
 
           {/* Attendance Actions */}
           <div className="grid grid-cols-2 gap-4">

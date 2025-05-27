@@ -6,6 +6,7 @@ import {
   getEmployeeAttendance,
   getAllAttendance,
   getCompOffDates,
+  getAttendanceSummary,
 } from '../controllers/attendanceController.js';
 import { protect, restrictTo } from '../controllers/authController.js';
 
@@ -23,5 +24,6 @@ router.get('/compoff-dates', getCompOffDates);
 // Admin routes
 router.get('/employee/:employeeId', restrictTo('admin', 'subadmin'), getEmployeeAttendance);
 router.get('/all', restrictTo('admin', 'subadmin'), getAllAttendance);
+router.get('/summary', restrictTo('admin', 'subadmin'), getAttendanceSummary);
 
 export default router;

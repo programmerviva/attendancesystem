@@ -10,10 +10,12 @@ function Dashboard() {
     totalEmployees: 0,
     presentToday: 0,
     pendingLeaves: 0,
+    pendingOutdoorDuty: 0,
     departments: 0,
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [leaveRequests, setLeaveRequests] = useState([]);
+  const [outdoorDutyRequests, setOutdoorDutyRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshInterval, setRefreshInterval] = useState(null);
@@ -28,7 +30,7 @@ function Dashboard() {
     // Set up interval for auto-refresh
     const interval = setInterval(() => {
       fetchActivityData();
-    }, 30000); // 30 seconds
+    }, 10000); // 10 seconds
 
     setRefreshInterval(interval);
 
@@ -74,6 +76,13 @@ function Dashboard() {
         })
         .catch(() => ({ data: { data: { present: 0 } } })); // Fallback if endpoint doesn't exist
 
+      // Fetch pending outdoor duty requests
+      const outdoorDutyRes = await axios
+        .get(`${apiUrl}/api/v1/outdoor-duty/all?status=pending`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .catch(() => ({ data: { data: { outdoorDutyRequests: [] } } }));
+
       // Get unique departments count
       const usersRes = await axios.get(`${apiUrl}/api/v1/users`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -87,11 +96,15 @@ function Dashboard() {
         totalEmployees: employeesRes.data?.count || 0,
         presentToday: attendanceRes.data?.data?.present || 0,
         pendingLeaves: leavesRes.data?.results || 0,
+        pendingOutdoorDuty: outdoorDutyRes.data?.data?.outdoorDutyRequests?.length || 0,
         departments: uniqueDepartments.size || 0,
       });
 
       // Set leave requests
       setLeaveRequests(leavesRes.data?.data?.leaves || []);
+
+      // Set outdoor duty requests
+      setOutdoorDutyRequests(outdoorDutyRes.data?.data?.outdoorDutyRequests || []);
 
       // Fetch activity data
       await fetchActivityData();
@@ -155,11 +168,61 @@ function Dashboard() {
     }
   };
 
+  const handleApproveOutdoorDuty = async (requestId) => {
+    try {
+      await axios.patch(
+        `${apiUrl}/api/v1/outdoor-duty/${requestId}`,
+        {
+          status: 'approved',
+          remarks: 'Approved from dashboard',
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Refresh data
+      fetchDashboardData();
+    } catch (err) {
+      console.error('Error approving outdoor duty:', err);
+      setError('Failed to approve outdoor duty request');
+    }
+  };
+
+  const handleRejectOutdoorDuty = async (requestId) => {
+    try {
+      await axios.patch(
+        `${apiUrl}/api/v1/outdoor-duty/${requestId}`,
+        {
+          status: 'rejected',
+          remarks: 'Rejected from dashboard',
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Refresh data
+      fetchDashboardData();
+    } catch (err) {
+      console.error('Error rejecting outdoor duty:', err);
+      setError('Failed to reject outdoor duty request');
+    }
+  };
+
   const navigateToLeaveApproval = (status) => {
     // Store the selected status in localStorage
     localStorage.setItem('selectedLeaveStatus', status);
     // Navigate to the admin dashboard with leaves tab
     navigate('/admin/dashboard?tab=leaves');
+  };
+
+  const navigateToOutdoorDutyApproval = () => {
+    navigate('/admin/outdoor-duty-approval');
   };
 
   if (loading) {
@@ -256,13 +319,13 @@ function Dashboard() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
               />
             </svg>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600">Departments</p>
-            <p className="text-2xl font-semibold text-gray-800">{stats.departments}</p>
+            <p className="text-sm font-medium text-gray-600">Pending OD Requests</p>
+            <p className="text-2xl font-semibold text-gray-800">{stats.pendingOutdoorDuty}</p>
           </div>
         </div>
       </div>
@@ -387,6 +450,68 @@ function Dashboard() {
               <p className="text-gray-500 text-center py-4">No pending leave requests.</p>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Pending Outdoor Duty Requests */}
+      <div className="mt-8 bg-white rounded-lg shadow-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-lg font-medium text-gray-800">Pending Outdoor Duty Requests</h2>
+          <button
+            onClick={navigateToOutdoorDutyApproval}
+            className="text-sm text-purple-600 hover:text-purple-800"
+          >
+            View All
+          </button>
+        </div>
+        <div className="p-6">
+          {outdoorDutyRequests.length > 0 ? (
+            <div className="space-y-4">
+              {outdoorDutyRequests.slice(0, 5).map((request) => (
+                <div
+                  key={request._id}
+                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {request.user?.fullName?.first ? `${request.user.fullName.first} ${request.user.fullName.last || ''}` : 'Employee'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {request.user?.department || 'Department'}
+                      </p>
+                    </div>
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-200 text-yellow-800">
+                      Pending
+                    </span>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">Outdoor Duty Date:</span>{' '}
+                      {formatDate(request.date)}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">{request.reason}</p>
+                  </div>
+                  <div className="mt-3 flex space-x-2">
+                    <button
+                      onClick={() => handleApproveOutdoorDuty(request._id)}
+                      className="px-3 py-1 bg-green-200 text-green-700 rounded-md text-sm hover:bg-green-300"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleRejectOutdoorDuty(request._id)}
+                      className="px-3 py-1 bg-red-200 text-red-700 rounded-md text-sm hover:bg-red-300"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-4">No pending outdoor duty requests.</p>
+          )}
         </div>
       </div>
     </div>
