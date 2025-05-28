@@ -82,7 +82,7 @@ export const createAttendance = async (req, res, next) => {
       attendance = new Attendance({
         user: userId,
         date: today,
-        status: isOutdoorDuty ? 'outdoor-duty' : 'present', // Set status based on outdoor duty
+        status: 'present', // Always set to present when checking in
         isOutdoorDuty,
       });
 
@@ -110,8 +110,45 @@ export const createAttendance = async (req, res, next) => {
         longitude,
         address,
       };
+      
+      // Set a fun/professional status message for check-in
+      attendance.status = 'checked-in';
+      
+      // Add a welcome message
+      const hour = dayjs(time).hour();
+      let welcomeMessage = '';
+      
+      if (hour < 12) {
+        welcomeMessage = 'Good morning! Have a productive day ahead!';
+      } else if (hour < 16) {
+        welcomeMessage = 'Good afternoon! Keep up the great work!';
+      } else {
+        welcomeMessage = 'Good evening! Finishing strong today!';
+      }
+      
+      attendance.welcomeMessage = welcomeMessage;
+      
+      // If there's an approved outdoor duty for today, calculate OD hours immediately
+      if (isOutdoorDuty && outdoorDuty) {
+        // Calculate outdoor duty hours
+        const odStartTime = dayjs(outdoorDuty.startTime);
+        const odEndTime = dayjs(outdoorDuty.endTime);
+        const odHours = odEndTime.diff(odStartTime, 'hour', true).toFixed(2);
+        attendance.outdoorDutyHours = parseFloat(odHours);
+        
+        // Store outdoor duty details
+        attendance.outdoorDutyDetails = {
+          startTime: outdoorDuty.startTime,
+          endTime: outdoorDuty.endTime,
+          reason: outdoorDuty.reason,
+          outdoorDutyId: outdoorDuty._id
+        };
+        
+        // For check-in, just store OD hours, don't calculate total yet
+        attendance.status = 'checked-in'; // Keep as checked-in regardless of time
+      }
 
-      // If not on outdoor duty, determine status based on check-in time and office hours
+      // Only determine status based on check-in time if there's no outdoor duty
       if (!isOutdoorDuty) {
         const checkInTime = dayjs(time);
 
@@ -126,26 +163,27 @@ export const createAttendance = async (req, res, next) => {
         const lateTime = officeStartTime.add(lateThreshold, 'minute');
         const halfDayTime = officeStartTime.add(halfDayThreshold, 'minute');
 
+        // Only apply these status rules if there's no outdoor duty
         if (checkInTime.isBefore(lateTime)) {
-          attendance.status = 'present';
+          attendance.status = 'checked-in'; // Keep as checked-in instead of present
         } else if (checkInTime.isBefore(halfDayTime)) {
-          attendance.status = 'late';
+          attendance.status = 'checked-in'; // Keep as checked-in instead of late
         } else {
-          attendance.status = 'half-day';
+          attendance.status = 'checked-in'; // Keep as checked-in instead of half-day
         }
+      }
 
-        // Check if it's a weekend (Sunday = 0, Saturday = 6)
-        const dayOfWeek = dayjs(time).day();
-        if (dayOfWeek === 0) {
-          // Sunday
-          // Add to comp off dates if it's a Sunday
-          const user = await User.findById(userId);
-          user.compOffDates.push({
-            date: new Date(today),
-            used: false,
-          });
-          await user.save();
-        }
+      // Check if it's a weekend (Sunday = 0, Saturday = 6)
+      const dayOfWeek = dayjs(time).day();
+      if (dayOfWeek === 0) {
+        // Sunday
+        // Add to comp off dates if it's a Sunday
+        const user = await User.findById(userId);
+        user.compOffDates.push({
+          date: new Date(today),
+          used: false,
+        });
+        await user.save();
       }
     } else {
       // Check if already checked out
@@ -165,15 +203,84 @@ export const createAttendance = async (req, res, next) => {
         address,
       };
 
-      // Calculate work hours
+      // Calculate work hours, handling potential OD overlap
       const checkInTime = dayjs(attendance.checkIn.time);
       const checkOutTime = dayjs(time);
-      const workHours = checkOutTime.diff(checkInTime, 'hour', true).toFixed(2);
-      attendance.workHours = workHours;
+      let workHours = checkOutTime.diff(checkInTime, 'hour', true).toFixed(2);
+      
+      // Check for OD overlap with work hours to avoid double counting
+      if (isOutdoorDuty && outdoorDuty) {
+        const odStartTime = dayjs(outdoorDuty.startTime);
+        const odEndTime = dayjs(outdoorDuty.endTime);
+        
+        // Check if OD overlaps with work hours
+        const hasOverlap = (odStartTime.isAfter(checkInTime) && odStartTime.isBefore(checkOutTime)) ||
+                          (odEndTime.isAfter(checkInTime) && odEndTime.isBefore(checkOutTime)) ||
+                          (odStartTime.isBefore(checkInTime) && odEndTime.isAfter(checkOutTime));
+        
+        if (hasOverlap) {
+          // Calculate non-overlapping work hours
+          let effectiveWorkHours = 0;
+          
+          // Time before OD starts (if any)
+          if (odStartTime.isAfter(checkInTime)) {
+            effectiveWorkHours += odStartTime.diff(checkInTime, 'hour', true);
+          }
+          
+          // Time after OD ends (if any)
+          if (odEndTime.isBefore(checkOutTime)) {
+            effectiveWorkHours += checkOutTime.diff(odEndTime, 'hour', true);
+          }
+          
+          workHours = effectiveWorkHours.toFixed(2);
+        }
+      }
+      
+      attendance.workHours = parseFloat(workHours);
+      
+      // Check if there's an approved outdoor duty for today
+      if (isOutdoorDuty && outdoorDuty) {
+        // Calculate outdoor duty hours
+        const odStartTime = dayjs(outdoorDuty.startTime);
+        const odEndTime = dayjs(outdoorDuty.endTime);
+        const odHours = odEndTime.diff(odStartTime, 'hour', true).toFixed(2);
+        attendance.outdoorDutyHours = parseFloat(odHours);
+        
+        // Store outdoor duty details
+        attendance.outdoorDutyDetails = {
+          startTime: outdoorDuty.startTime,
+          endTime: outdoorDuty.endTime,
+          reason: outdoorDuty.reason,
+          outdoorDutyId: outdoorDuty._id
+        };
+        
+        // Calculate total hours (work hours + outdoor duty hours)
+        attendance.totalHours = parseFloat((parseFloat(workHours) + parseFloat(odHours)).toFixed(2));
+        
+        // Check if OD covers checkout time (evening OD) - more precise check
+        const officeEndTime = dayjs().hour(parseInt(officeHours.end.split(':')[0]))
+                                    .minute(parseInt(officeHours.end.split(':')[1] || '0'))
+                                    .second(0);
+        const odStartTimeForCheckout = dayjs(outdoorDuty.startTime);
+        const odEndTimeForCheckout = dayjs(outdoorDuty.endTime);
+        
+        // Check if OD time overlaps with checkout time
+        const isEveningOD = odStartTimeForCheckout.isBefore(officeEndTime) && odEndTimeForCheckout.isAfter(officeEndTime) || 
+                           odEndTimeForCheckout.hour() >= officeEndTime.hour();
+        
+        if (isEveningOD) {
+          // If OD covers checkout time, mark as present
+          attendance.status = 'present';
+          attendance.remarks = attendance.remarks || '';
+          attendance.remarks += ' Auto-marked present due to evening outdoor duty.';
+        }
+      } else {
+        // No outdoor duty, total hours equals work hours
+        attendance.totalHours = parseFloat(workHours);
+      }
 
       // If not on outdoor duty, calculate and set status based on work hours and office hours
       if (
-        !isOutdoorDuty &&
         attendance.checkIn &&
         attendance.checkIn.time &&
         attendance.checkOut &&
@@ -205,13 +312,16 @@ export const createAttendance = async (req, res, next) => {
         const officeEndTime = dayjs(checkOut).hour(endHour).minute(endMinute).second(0);
         const earlyLeaveTime = officeEndTime.subtract(earlyLeaveThreshold, 'minute');
 
-        // Determine status based on work hours and early leave
-        if (attendance.workHours >= expectedWorkHours * 0.9) {
+        // Determine status based on total hours (work hours + outdoor duty hours)
+        // Use totalHours if available, otherwise fall back to workHours
+        const totalHours = attendance.totalHours || attendance.workHours;
+        
+        if (totalHours >= expectedWorkHours * 0.9) {
           // 90% of expected hours
           attendance.status = 'present';
-        } else if (attendance.workHours >= halfExpectedHours) {
+        } else if (totalHours >= halfExpectedHours) {
           // Check if left early
-          if (checkOutTime.isBefore(earlyLeaveTime)) {
+          if (checkOutTime.isBefore(earlyLeaveTime) && !isOutdoorDuty) {
             attendance.status = 'early-leave';
           } else {
             attendance.status = 'half-day';
@@ -245,12 +355,63 @@ export const getTodayAttendance = async (req, res, next) => {
       user: userId,
       date: today,
     });
+    
+    // Check if user has outdoor duty for today
+    const outdoorDuty = await OutdoorDuty.findOne({
+      user: userId,
+      date: today,
+      status: 'approved',
+    });
+    
+    // If attendance exists and has check-in, ensure it shows checked-in status
+    if (attendance && attendance.checkIn && attendance.checkIn.time && !attendance.checkOut) {
+      // Always set to checked-in if only checked in (no checkout yet)
+      attendance.status = 'checked-in';
+      
+      // If there's an OD, add OD indicator to the status message
+      if (outdoorDuty) {
+        // Calculate if user is currently on OD
+        const now = dayjs();
+        // Handle case where outdoorDuty might not have startTime/endTime (legacy records)
+        const dutyStartTime = outdoorDuty.startTime ? dayjs(outdoorDuty.startTime) : now.subtract(1, 'hour');
+        const dutyEndTime = outdoorDuty.endTime ? dayjs(outdoorDuty.endTime) : now.add(1, 'hour');
+        const isCurrentlyOnOD = now.isAfter(dutyStartTime) && now.isBefore(dutyEndTime);
+        
+        if (isCurrentlyOnOD) {
+          attendance.welcomeMessage = attendance.welcomeMessage || '';
+          attendance.welcomeMessage += ' You are currently on outdoor duty.';
+        } else if (now.isBefore(dutyStartTime)) {
+          const minutesToOD = dutyStartTime.diff(now, 'minute');
+          attendance.welcomeMessage = attendance.welcomeMessage || '';
+          attendance.welcomeMessage += ` Your outdoor duty starts in ${Math.max(0, minutesToOD)} minutes.`;
+        }
+        
+        // Store OD hours and details if not already stored
+        if (!attendance.outdoorDutyHours) {
+          const dutyHours = dutyEndTime.diff(dutyStartTime, 'hour', true).toFixed(2);
+          attendance.outdoorDutyHours = parseFloat(dutyHours);
+          
+          attendance.outdoorDutyDetails = {
+            startTime: outdoorDuty.startTime || null,
+            endTime: outdoorDuty.endTime || null,
+            reason: outdoorDuty.reason || '',
+            outdoorDutyId: outdoorDuty._id
+          };
+        }
+      }
+      
+      await attendance.save();
+    }
+
+    // Add OD info to response
+    const responseData = {
+      attendance,
+      outdoorDuty: outdoorDuty || null,
+    };
 
     res.status(200).json({
       status: 'success',
-      data: {
-        attendance,
-      },
+      data: responseData,
     });
   } catch (err) {
     next(err);
@@ -403,6 +564,30 @@ export const getAttendanceSummary = async (req, res, next) => {
     }
 
     res.status(200).json(summary);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Trigger auto checkout for employees with evening OD
+export const triggerAutoCheckout = async (req, res, next) => {
+  try {
+    // Check if user is admin or subadmin
+    if (req.user.role !== 'admin' && req.user.role !== 'subadmin') {
+      return next(new AppError('You do not have permission to perform this action', 403));
+    }
+    
+    // Import the auto checkout function
+    const autoCheckout = await import('../controllers/autoCheckout.js');
+    const { autoCheckoutForODEmployees } = autoCheckout;
+    
+    // Run the auto checkout process
+    const result = await autoCheckoutForODEmployees() || { success: false, message: 'Auto checkout function failed' };
+    
+    res.status(200).json({
+      status: result.success ? 'success' : 'error',
+      message: result.message,
+    });
   } catch (error) {
     next(error);
   }

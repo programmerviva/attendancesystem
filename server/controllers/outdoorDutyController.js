@@ -6,12 +6,21 @@ import dayjs from 'dayjs';
 // Create outdoor duty request
 export const createOutdoorDutyRequest = async (req, res, next) => {
   try {
-    const { date, reason } = req.body;
+    const { date, startTime, endTime, reason } = req.body;
     const userId = req.user._id;
 
     // Validate date
     if (!date) {
       return next(new AppError('Date is required', 400));
+    }
+
+    // Validate start and end times
+    if (!startTime) {
+      return next(new AppError('Start time is required', 400));
+    }
+
+    if (!endTime) {
+      return next(new AppError('End time is required', 400));
     }
 
     // Validate reason
@@ -22,20 +31,40 @@ export const createOutdoorDutyRequest = async (req, res, next) => {
     // Format date to YYYY-MM-DD
     const formattedDate = dayjs(date).format('YYYY-MM-DD');
 
-    // Check if request already exists for this date
-    const existingRequest = await OutdoorDuty.findOne({
+    // Check if request already exists for this date with overlapping time
+    const existingRequests = await OutdoorDuty.find({
       user: userId,
       date: formattedDate,
     });
 
-    if (existingRequest) {
-      return next(new AppError('Outdoor duty request already exists for this date', 400));
+    if (existingRequests.length > 0) {
+      // Check for time overlap with existing requests
+      const newStartTime = dayjs(startTime);
+      const newEndTime = dayjs(endTime);
+      
+      const hasOverlap = existingRequests.some(request => {
+        const existingStartTime = dayjs(request.startTime);
+        const existingEndTime = dayjs(request.endTime);
+        
+        // Check if new time range overlaps with existing time range
+        return (
+          (newStartTime.isBefore(existingEndTime) && newEndTime.isAfter(existingStartTime)) ||
+          newStartTime.isSame(existingStartTime) || 
+          newEndTime.isSame(existingEndTime)
+        );
+      });
+      
+      if (hasOverlap) {
+        return next(new AppError('Outdoor duty request with overlapping time already exists for this date', 400));
+      }
     }
 
     // Create new outdoor duty request
     const outdoorDutyRequest = new OutdoorDuty({
       user: userId,
       date: formattedDate,
+      startTime,
+      endTime,
       reason,
     });
 
@@ -204,12 +233,17 @@ export const updateOutdoorDutyRequestStatus = async (req, res, next) => {
           date: outdoorDutyRequest.date,
         });
 
-        // Create a safe outdoorDutyRequest object for attendance
-        const safeOutdoorDutyRequest = {
-          status: 'approved',
+        // Calculate outdoor duty hours
+        const odStartTime = dayjs(outdoorDutyRequest.startTime);
+        const odEndTime = dayjs(outdoorDutyRequest.endTime);
+        const odHours = odEndTime.diff(odStartTime, 'hour', true).toFixed(2);
+        
+        // Create outdoor duty details
+        const outdoorDutyDetails = {
+          startTime: outdoorDutyRequest.startTime,
+          endTime: outdoorDutyRequest.endTime,
           reason: outdoorDutyRequest.reason || '',
-          approvedBy: req.user._id,
-          approvedAt: Date.now(),
+          outdoorDutyId: outdoorDutyRequest._id
         };
 
         if (!attendance) {
@@ -219,14 +253,34 @@ export const updateOutdoorDutyRequestStatus = async (req, res, next) => {
             date: outdoorDutyRequest.date,
             status: 'outdoor-duty',
             isOutdoorDuty: true,
-            outdoorDutyRequest: safeOutdoorDutyRequest,
+            outdoorDutyHours: parseFloat(odHours),
+            totalHours: parseFloat(odHours),
+            outdoorDutyDetails: outdoorDutyDetails,
             remarks: `Outdoor duty approved by ${req.user.fullName || 'Admin'}`,
           });
         } else {
           // Update existing attendance record
           attendance.status = 'outdoor-duty';
           attendance.isOutdoorDuty = true;
-          attendance.outdoorDutyRequest = safeOutdoorDutyRequest;
+          attendance.outdoorDutyHours = parseFloat(odHours);
+          attendance.outdoorDutyDetails = outdoorDutyDetails;
+          
+          // If there are work hours, add them to total hours
+          if (attendance.workHours) {
+            attendance.totalHours = parseFloat((attendance.workHours + parseFloat(odHours)).toFixed(2));
+          } else {
+            attendance.totalHours = parseFloat(odHours);
+          }
+          
+          // Update status based on total hours if check-in/out exists
+          if (attendance.checkIn && attendance.checkOut) {
+            if (attendance.totalHours >= 8) {
+              attendance.status = 'present';
+            } else if (attendance.totalHours >= 4) {
+              attendance.status = 'half-day';
+            }
+          }
+          
           attendance.remarks = `Outdoor duty approved by ${req.user.fullName || 'Admin'}`;
         }
 

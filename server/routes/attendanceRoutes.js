@@ -1,29 +1,23 @@
 import express from 'express';
-import {
-  createAttendance,
-  getTodayAttendance,
-  getAttendanceHistory,
-  getEmployeeAttendance,
-  getAllAttendance,
-  getCompOffDates,
-  getAttendanceSummary,
-} from '../controllers/attendanceController.js';
-import { protect, restrictTo } from '../controllers/authController.js';
+import * as attendanceController from '../controllers/attendanceController.js';
+import { protect } from '../controllers/authController.js';
 
 const router = express.Router();
 
-// Protect all routes
+// Protect all routes after this middleware
 router.use(protect);
 
-// Employee routes
-router.post('/', createAttendance);
-router.get('/today', getTodayAttendance);
-router.get('/history', getAttendanceHistory);
-router.get('/compoff-dates', getCompOffDates);
+router.post('/', attendanceController.createAttendance);
+router.get('/today', attendanceController.getTodayAttendance);
+router.get('/history', attendanceController.getAttendanceHistory);
+router.get('/comp-off-dates', attendanceController.getCompOffDates);
 
 // Admin routes
-router.get('/employee/:employeeId', restrictTo('admin', 'subadmin'), getEmployeeAttendance);
-router.get('/all', restrictTo('admin', 'subadmin'), getAllAttendance);
-router.get('/summary', restrictTo('admin', 'subadmin'), getAttendanceSummary);
+router.get('/employee/:employeeId', attendanceController.getEmployeeAttendance);
+router.get('/all', attendanceController.getAllAttendance);
+router.get('/summary', attendanceController.getAttendanceSummary);
+
+// New route for auto checkout
+router.post('/auto-checkout', attendanceController.triggerAutoCheckout);
 
 export default router;

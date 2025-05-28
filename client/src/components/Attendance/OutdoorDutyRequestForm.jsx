@@ -7,6 +7,8 @@ const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function OutdoorDutyRequestForm() {
   const [date, setDate] = useState('');
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('18:00');
   const [reason, setReason] = useState('');
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -24,9 +26,9 @@ function OutdoorDutyRequestForm() {
       return;
     }
 
-    // Set default date to tomorrow
-    const tomorrow = dayjs().add(1, 'day').format('YYYY-MM-DD');
-    setDate(tomorrow);
+    // Set default date to today
+    const today = dayjs().format('YYYY-MM-DD');
+    setDate(today);
 
     // Fetch user's outdoor duty requests
     fetchMyRequests();
@@ -63,9 +65,32 @@ function OutdoorDutyRequestForm() {
     setSuccess(null);
     setLoading(true);
 
-    // Validate date is in the future
+    // Validate date is today or in the future
     if (dayjs(date).isBefore(dayjs().startOf('day'))) {
-      setError('Outdoor duty date must be in the future.');
+      setError('Outdoor duty date must be today or in the future.');
+      setLoading(false);
+      return;
+    }
+
+    // Validate start and end times
+    if (!startTime) {
+      setError('Start time is required.');
+      setLoading(false);
+      return;
+    }
+
+    if (!endTime) {
+      setError('End time is required.');
+      setLoading(false);
+      return;
+    }
+
+    // Validate end time is after start time
+    const startDateTime = dayjs(`${date} ${startTime}`);
+    const endDateTime = dayjs(`${date} ${endTime}`);
+    
+    if (endDateTime.isBefore(startDateTime) || endDateTime.isSame(startDateTime)) {
+      setError('End time must be after start time.');
       setLoading(false);
       return;
     }
@@ -78,10 +103,16 @@ function OutdoorDutyRequestForm() {
     }
 
     try {
+      // Format start and end times as ISO strings
+      const startDateTime = dayjs(`${date} ${startTime}`).toISOString();
+      const endDateTime = dayjs(`${date} ${endTime}`).toISOString();
+
       await axios.post(
         `${apiUrl}/api/v1/outdoor-duty`,
         {
           date,
+          startTime: startDateTime,
+          endTime: endDateTime,
           reason,
         },
         {
@@ -94,9 +125,11 @@ function OutdoorDutyRequestForm() {
       setSuccess('Outdoor duty request submitted successfully!');
       setReason('');
       
-      // Set date to tomorrow again
-      const tomorrow = dayjs().add(1, 'day').format('YYYY-MM-DD');
-      setDate(tomorrow);
+      // Set date to today again
+      const today = dayjs().format('YYYY-MM-DD');
+      setDate(today);
+      setStartTime('09:00');
+      setEndTime('18:00');
       
       // Refresh requests list
       fetchMyRequests();
@@ -212,10 +245,39 @@ function OutdoorDutyRequestForm() {
                 id="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                min={dayjs().add(1, 'day').format('YYYY-MM-DD')} // Can only request for future dates
+                min={dayjs().format('YYYY-MM-DD')} // Allow current date and future dates
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 required
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="startTime" className="block text-sm font-medium text-gray-700">
+                  Start Time
+                </label>
+                <input
+                  type="time"
+                  id="startTime"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="endTime" className="block text-sm font-medium text-gray-700">
+                  End Time
+                </label>
+                <input
+                  type="time"
+                  id="endTime"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  required
+                />
+              </div>
             </div>
 
             <div>
@@ -264,6 +326,12 @@ function OutdoorDutyRequestForm() {
                         scope="col"
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       >
+                        Time
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Reason
                       </th>
                       <th
@@ -285,6 +353,11 @@ function OutdoorDutyRequestForm() {
                       <tr key={request._id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {dayjs(request.date).format('DD MMM YYYY')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {request.startTime && request.endTime ? 
+                            `${dayjs(request.startTime).format('HH:mm')} - ${dayjs(request.endTime).format('HH:mm')}` : 
+                            'N/A'}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                           {request.reason}

@@ -32,10 +32,31 @@ const attendanceSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    outdoorDutyHours: {
+      type: Number,
+      default: 0,
+    },
+    totalHours: {
+      type: Number,
+      default: 0,
+    },
     status: {
       type: String,
-      enum: ['present', 'absent', 'half-day', 'late', 'early-leave', 'on-leave'],
+      enum: ['present', 'absent', 'half-day', 'late', 'early-leave', 'on-leave', 'outdoor-duty', 'checked-in'],
       default: 'absent',
+    },
+    welcomeMessage: {
+      type: String,
+      default: '',
+    },
+    outdoorDutyDetails: {
+      startTime: Date,
+      endTime: Date,
+      reason: String,
+      outdoorDutyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'OutdoorDuty'
+      }
     },
     remarks: String,
   },
@@ -54,17 +75,21 @@ attendanceSchema.methods.calculateWorkHours = function () {
     const diffMs = checkOutTime - checkInTime;
     const diffHrs = diffMs / (1000 * 60 * 60);
     this.workHours = parseFloat(diffHrs.toFixed(2));
-
-    // Determine status based on work hours
-    if (this.workHours >= 8) {
-      this.status = 'present';
-    } else if (this.workHours >= 4) {
-      this.status = 'half-day';
-    } else {
-      this.status = 'early-leave';
-    }
   }
-  return this.workHours;
+  
+  // Calculate total hours (work hours + outdoor duty hours)
+  this.totalHours = parseFloat((this.workHours + (this.outdoorDutyHours || 0)).toFixed(2));
+  
+  // Determine status based on total hours
+  if (this.totalHours >= 8) {
+    this.status = 'present';
+  } else if (this.totalHours >= 4) {
+    this.status = 'half-day';
+  } else {
+    this.status = 'early-leave';
+  }
+  
+  return this.totalHours;
 };
 
 const Attendance = mongoose.model('Attendance', attendanceSchema);
