@@ -28,13 +28,7 @@ function App() {
         <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/leave" element={<LeavePage />} />
         <Route path="/outdoor-duty" element={<OutdoorDutyPage />} />
-        <Route path="/admin/outdoor-duty-approval" element={<div className="p-8 text-center">
-          <h2 className="text-xl mb-4">Outdoor Duty Approval</h2>
-          <p className="mb-4">This page is currently under maintenance.</p>
-          <a href="/admin/dashboard" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            Return to Dashboard
-          </a>
-        </div>} />
+        <Route path="/admin/outdoor-duty-approval" element={<OutdoorDutyApprovalPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>

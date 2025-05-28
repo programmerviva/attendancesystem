@@ -10,7 +10,7 @@ function OutdoorDutyApproval() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [statusFilter, setStatusFilter] = useState('pending');
+  const [statusFilter, setStatusFilter] = useState('');
   const [remarks, setRemarks] = useState({});
   const navigate = useNavigate();
 
@@ -18,23 +18,40 @@ function OutdoorDutyApproval() {
   const token = localStorage.getItem('token');
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
 
+  // Function to manually refresh data
+  const refreshData = () => {
+    console.log('Manual refresh triggered with status filter:', statusFilter);
+    fetchRequests().catch(err => {
+      console.error("Failed to fetch requests:", err);
+      setError("Failed to load requests. Please try again.");
+      setLoading(false);
+    });
+  };
+
   useEffect(() => {
     if (!token || !user) {
       navigate('/login');
       return;
     }
 
-    try {
-      fetchRequests().catch(err => {
-        console.error("Failed to fetch requests:", err);
-        setError("Failed to load requests. Please try again.");
+    console.log('Status filter changed to:', statusFilter);
+
+    // Add a small delay to prevent rapid API calls when changing filters
+    const fetchTimer = setTimeout(() => {
+      try {
+        fetchRequests().catch(err => {
+          console.error("Failed to fetch requests:", err);
+          setError("Failed to load requests. Please try again.");
+          setLoading(false);
+        });
+      } catch (err) {
+        console.error("Error in useEffect:", err);
+        setError("An unexpected error occurred.");
         setLoading(false);
-      });
-    } catch (err) {
-      console.error("Error in useEffect:", err);
-      setError("An unexpected error occurred.");
-      setLoading(false);
-    }
+      }
+    }, 300);
+    
+    return () => clearTimeout(fetchTimer);
   }, [token, user, navigate, statusFilter]);
 
   const fetchRequests = async () => {
@@ -42,45 +59,69 @@ function OutdoorDutyApproval() {
       setLoading(true);
       setError(null);
       
-      // Get requests for the next 30 days
-      const startDate = dayjs().subtract(7, 'days').format('YYYY-MM-DD');
+      // Get requests for the past 60 days and next 30 days
+      const startDate = dayjs().subtract(60, 'days').format('YYYY-MM-DD');
       const endDate = dayjs().add(30, 'days').format('YYYY-MM-DD');
       
       // Default empty array for requests
       let safeRequests = [];
       
       try {
+        // Build URL based on status filter
+        let url = `${apiUrl}/api/v1/outdoor-duty/all?startDate=${startDate}&endDate=${endDate}`;
+        
+        // Only add status parameter if it's not empty
+        if (statusFilter) {
+          url += `&status=${statusFilter}`;
+        }
+        
+        console.log('Fetching outdoor duty requests with URL:', url);
+        
         const response = await axios.get(
-          `${apiUrl}/api/v1/outdoor-duty/all?startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`,
+          url,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
         
+        // Log the response for debugging
+        console.log('API Response:', response.data);
+        
         // Safely handle the response
-        if (response && response.data && response.data.data && Array.isArray(response.data.data.outdoorDutyRequests)) {
-          safeRequests = response.data.data.outdoorDutyRequests.map(request => {
-            if (!request) return null;
+        if (response && response.data && response.data.data) {
+          // Handle both array and object response formats
+          const outdoorDutyRequests = response.data.data.outdoorDutyRequests || [];
+          
+          if (Array.isArray(outdoorDutyRequests)) {
+            safeRequests = outdoorDutyRequests.map(request => {
+              if (!request) return null;
+              
+              // Create a safe copy with default values
+              return {
+                _id: request._id || '',
+                user: {
+                  fullName: request.user?.fullName || 'Unknown',
+                  email: request.user?.email || '',
+                  department: request.user?.department || '',
+                  designation: request.user?.designation || ''
+                },
+                date: request.date || '',
+                reason: request.reason || '',
+                status: request.status || 'pending',
+                remarks: request.remarks || '',
+                approvedBy: request.approvedBy || null,
+                approvedAt: request.approvedAt || null,
+                createdAt: request.createdAt || '',
+                updatedAt: request.updatedAt || ''
+              };
+            }).filter(Boolean); // Remove any null items
             
-            // Create a safe copy with default values
-            return {
-              _id: request._id || '',
-              user: {
-                fullName: request.user?.fullName || 'Unknown',
-                email: request.user?.email || '',
-                department: request.user?.department || '',
-                designation: request.user?.designation || ''
-              },
-              date: request.date || '',
-              reason: request.reason || '',
-              status: request.status || 'pending',
-              remarks: request.remarks || '',
-              approvedBy: request.approvedBy || null,
-              approvedAt: request.approvedAt || null,
-              createdAt: request.createdAt || '',
-              updatedAt: request.updatedAt || ''
-            };
-          }).filter(Boolean); // Remove any null items
+            console.log('Processed requests:', safeRequests.length);
+          } else {
+            console.error('outdoorDutyRequests is not an array:', outdoorDutyRequests);
+          }
+        } else {
+          console.error('Invalid response structure:', response);
         }
       } catch (fetchError) {
         console.error('Error in axios request:', fetchError);
@@ -173,17 +214,38 @@ function OutdoorDutyApproval() {
             <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700 mb-2">
               Filter by Status
             </label>
-            <select
-              id="statusFilter"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            >
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="">All</option>
-            </select>
+            <div className="flex items-center space-x-2">
+              <select
+                id="statusFilter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              >
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="">All</option>
+              </select>
+              
+              <button 
+                onClick={refreshData}
+                className="mt-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 flex items-center"
+                title="Refresh data"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              
+              {loading && (
+                <div className="mt-1">
+                  <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Error message */}
@@ -211,8 +273,16 @@ function OutdoorDutyApproval() {
             </div>
           )}
 
+          {/* Status info */}
+          <div className="mb-4 px-2 py-1 bg-blue-50 rounded-md">
+            <p className="text-sm text-blue-700">
+              {statusFilter === '' ? 'Showing all requests' : 
+               `Showing ${statusFilter} requests`} from the past 60 days and upcoming 30 days
+            </p>
+          </div>
+          
           {/* Requests table */}
-          {loading ? (
+          {loading && requests.length === 0 ? (
             <div className="flex justify-center items-center py-10">
               <svg
                 className="animate-spin h-10 w-10 text-blue-600"
@@ -340,7 +410,19 @@ function OutdoorDutyApproval() {
             </div>
           ) : (
             <div className="text-center py-10">
-              <p className="text-gray-500">No outdoor duty requests found.</p>
+              <p className="text-gray-500">
+                {statusFilter ? 
+                  `No ${statusFilter} outdoor duty requests found.` : 
+                  'No outdoor duty requests found.'}
+              </p>
+              {statusFilter && (
+                <button 
+                  onClick={() => setStatusFilter('')}
+                  className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200"
+                >
+                  Show All Requests
+                </button>
+              )}
             </div>
           )}
         </div>

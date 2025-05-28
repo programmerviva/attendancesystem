@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 
-const apiUrl = import.meta.env.VITE_API_URL;
+const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function OutdoorDutyRequestForm() {
   const [date, setDate] = useState('');
@@ -34,8 +34,8 @@ function OutdoorDutyRequestForm() {
 
   const fetchMyRequests = async () => {
     try {
-      // Get requests for the next 30 days
-      const startDate = dayjs().format('YYYY-MM-DD');
+      // Get requests for the next 30 days and past 30 days
+      const startDate = dayjs().subtract(30, 'days').format('YYYY-MM-DD');
       const endDate = dayjs().add(30, 'days').format('YYYY-MM-DD');
       
       const response = await axios.get(
@@ -44,9 +44,16 @@ function OutdoorDutyRequestForm() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setMyRequests(response.data.data.outdoorDutyRequests);
+      
+      // Handle potential null response
+      if (response && response.data && response.data.data) {
+        setMyRequests(response.data.data.outdoorDutyRequests || []);
+      } else {
+        setMyRequests([]);
+      }
     } catch (err) {
       console.error('Error fetching outdoor duty requests:', err);
+      setError('Failed to load your outdoor duty requests');
     }
   };
 
@@ -55,6 +62,20 @@ function OutdoorDutyRequestForm() {
     setError(null);
     setSuccess(null);
     setLoading(true);
+
+    // Validate date is in the future
+    if (dayjs(date).isBefore(dayjs().startOf('day'))) {
+      setError('Outdoor duty date must be in the future.');
+      setLoading(false);
+      return;
+    }
+
+    // Validate reason has minimum length
+    if (reason.trim().length < 10) {
+      setError('Please provide a detailed reason with at least 10 characters.');
+      setLoading(false);
+      return;
+    }
 
     try {
       await axios.post(
@@ -80,6 +101,7 @@ function OutdoorDutyRequestForm() {
       // Refresh requests list
       fetchMyRequests();
     } catch (err) {
+      console.error('Error submitting outdoor duty request:', err);
       setError(err.response?.data?.message || 'Could not submit outdoor duty request.');
     } finally {
       setLoading(false);
@@ -96,6 +118,20 @@ function OutdoorDutyRequestForm() {
         return 'bg-yellow-100 text-yellow-800';
     }
   };
+
+  // Check if user is authenticated
+  if (!token || !user) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 text-center">
+        <div className="bg-red-50 p-4 rounded-md mb-4">
+          <p className="text-red-700">Please login to access this page.</p>
+        </div>
+        <Link to="/login" className="text-blue-600 hover:text-blue-800">
+          Go to Login
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -195,7 +231,7 @@ function OutdoorDutyRequestForm() {
                 placeholder="Please provide a detailed reason for your outdoor duty request"
                 required
               />
-            </div>
+            </div> 
 
             <div>
               <button
@@ -256,10 +292,12 @@ function OutdoorDutyRequestForm() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
                             className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(
-                              request.status
+                              request.status || 'pending'
                             )}`}
                           >
-                            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                            {request.status ? 
+                              request.status.charAt(0).toUpperCase() + request.status.slice(1) : 
+                              'Pending'}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">{request.remarks || '-'}</td>
