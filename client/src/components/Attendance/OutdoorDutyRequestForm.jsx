@@ -26,9 +26,11 @@ function OutdoorDutyRequestForm() {
       return;
     }
 
-    // Set default date to today
-    const today = dayjs().format('YYYY-MM-DD');
-    setDate(today);
+    // Set default date to today only if date is not already set
+    if (!date) {
+      const today = dayjs().format('YYYY-MM-DD');
+      setDate(today);
+    }
 
     // Fetch user's outdoor duty requests
     fetchMyRequests();
@@ -65,9 +67,9 @@ function OutdoorDutyRequestForm() {
     setSuccess(null);
     setLoading(true);
 
-    // Validate date is today or in the future
-    if (dayjs(date).isBefore(dayjs().startOf('day'))) {
-      setError('Outdoor duty date must be today or in the future.');
+    // Validate date is today or in the past
+    if (dayjs(date).isAfter(dayjs().startOf('day'))) {
+      setError('Outdoor duty date must be today or in the past.');
       setLoading(false);
       return;
     }
@@ -125,9 +127,7 @@ function OutdoorDutyRequestForm() {
       setSuccess('Outdoor duty request submitted successfully!');
       setReason('');
       
-      // Set date to today again
-      const today = dayjs().format('YYYY-MM-DD');
-      setDate(today);
+      // Keep the selected date, only reset time
       setStartTime('09:00');
       setEndTime('18:00');
       
@@ -245,7 +245,7 @@ function OutdoorDutyRequestForm() {
                 id="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                min={dayjs().format('YYYY-MM-DD')} // Allow current date and future dates
+                max={dayjs().format('YYYY-MM-DD')} // Allow current date and past dates only
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 required
               />

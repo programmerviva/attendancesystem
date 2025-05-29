@@ -14,6 +14,13 @@ export const createOutdoorDutyRequest = async (req, res, next) => {
       return next(new AppError('Date is required', 400));
     }
 
+    // Validate date is not in the future
+    const requestDate = dayjs(date);
+    const today = dayjs().startOf('day');
+    if (requestDate.isAfter(today)) {
+      return next(new AppError('Outdoor duty date must be today or in the past', 400));
+    }
+
     // Validate start and end times
     if (!startTime) {
       return next(new AppError('Start time is required', 400));
@@ -251,7 +258,7 @@ export const updateOutdoorDutyRequestStatus = async (req, res, next) => {
           attendance = new Attendance({
             user: outdoorDutyRequest.user,
             date: outdoorDutyRequest.date,
-            status: 'outdoor-duty',
+            status: parseFloat(odHours) >= 7 ? 'present' : parseFloat(odHours) >= 4 ? 'half-day' : 'outdoor-duty',
             isOutdoorDuty: true,
             outdoorDutyHours: parseFloat(odHours),
             totalHours: parseFloat(odHours),
@@ -260,25 +267,22 @@ export const updateOutdoorDutyRequestStatus = async (req, res, next) => {
           });
         } else {
           // Update existing attendance record
-          attendance.status = 'outdoor-duty';
           attendance.isOutdoorDuty = true;
           attendance.outdoorDutyHours = parseFloat(odHours);
           attendance.outdoorDutyDetails = outdoorDutyDetails;
           
-          // If there are work hours, add them to total hours
-          if (attendance.workHours) {
-            attendance.totalHours = parseFloat((attendance.workHours + parseFloat(odHours)).toFixed(2));
-          } else {
-            attendance.totalHours = parseFloat(odHours);
-          }
+          // Calculate total hours (work hours + OD hours)
+          const workHours = attendance.workHours || 0;
+          const totalHours = parseFloat((workHours + parseFloat(odHours)).toFixed(2));
+          attendance.totalHours = totalHours;
           
-          // Update status based on total hours if check-in/out exists
-          if (attendance.checkIn && attendance.checkOut) {
-            if (attendance.totalHours >= 8) {
-              attendance.status = 'present';
-            } else if (attendance.totalHours >= 4) {
-              attendance.status = 'half-day';
-            }
+          // Update status based on total hours
+          if (totalHours >= 7) {
+            attendance.status = 'present';
+          } else if (totalHours >= 4) {
+            attendance.status = 'half-day';
+          } else {
+            attendance.status = 'outdoor-duty';
           }
           
           attendance.remarks = `Outdoor duty approved by ${req.user.fullName || 'Admin'}`;
