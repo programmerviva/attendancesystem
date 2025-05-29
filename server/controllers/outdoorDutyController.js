@@ -31,12 +31,12 @@ export const createOutdoorDutyRequest = async (req, res, next) => {
     // Format date to YYYY-MM-DD
     const formattedDate = dayjs(date).format('YYYY-MM-DD');
     
-    // Check if date is in the past (only allow past dates for OD requests)
+    // Check if date is current or in the past (only allow current and past dates for OD requests)
     const requestDate = dayjs(formattedDate);
-    const today = dayjs().startOf('day');
+    const tomorrow = dayjs().startOf('day').add(1, 'day');
     
-    if (requestDate.isAfter(today)) {
-      return next(new AppError('Outdoor duty can only be requested for past dates', 400));
+    if (requestDate.isAfter(tomorrow)) {
+      return next(new AppError('Outdoor duty can only be requested for current or past dates', 400));
     }
 
     // Check if request already exists for this date with overlapping time
