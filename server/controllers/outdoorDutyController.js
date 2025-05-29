@@ -30,6 +30,14 @@ export const createOutdoorDutyRequest = async (req, res, next) => {
 
     // Format date to YYYY-MM-DD
     const formattedDate = dayjs(date).format('YYYY-MM-DD');
+    
+    // Check if date is in the past (only allow past dates for OD requests)
+    const requestDate = dayjs(formattedDate);
+    const today = dayjs().startOf('day');
+    
+    if (requestDate.isAfter(today)) {
+      return next(new AppError('Outdoor duty can only be requested for past dates', 400));
+    }
 
     // Check if request already exists for this date with overlapping time
     const existingRequests = await OutdoorDuty.find({
@@ -237,6 +245,7 @@ export const updateOutdoorDutyRequestStatus = async (req, res, next) => {
         const odStartTime = dayjs(outdoorDutyRequest.startTime);
         const odEndTime = dayjs(outdoorDutyRequest.endTime);
         const odHours = odEndTime.diff(odStartTime, 'hour', true).toFixed(2);
+        const parsedOdHours = parseFloat(odHours);
         
         // Create outdoor duty details
         const outdoorDutyDetails = {
@@ -247,41 +256,54 @@ export const updateOutdoorDutyRequestStatus = async (req, res, next) => {
         };
 
         if (!attendance) {
-          // Create new attendance record
+          // Create new attendance record for full day OD
           attendance = new Attendance({
             user: outdoorDutyRequest.user,
             date: outdoorDutyRequest.date,
-            status: 'outdoor-duty',
-            isOutdoorDuty: true,
-            outdoorDutyHours: parseFloat(odHours),
-            totalHours: parseFloat(odHours),
+            outdoorDutyHours: parsedOdHours,
+            totalHours: parsedOdHours,
             outdoorDutyDetails: outdoorDutyDetails,
             remarks: `Outdoor duty approved by ${req.user.fullName || 'Admin'}`,
           });
+          
+          // Set status based on OD hours
+          if (parsedOdHours >= 7) {
+            attendance.status = 'present';
+          } else if (parsedOdHours >= 5) {
+            attendance.status = 'early-leave';
+          } else if (parsedOdHours >= 4) {
+            attendance.status = 'half-day';
+          } else {
+            attendance.status = 'early-leave';
+          }
         } else {
           // Update existing attendance record
-          attendance.status = 'outdoor-duty';
-          attendance.isOutdoorDuty = true;
-          attendance.outdoorDutyHours = parseFloat(odHours);
+          attendance.outdoorDutyHours = parsedOdHours;
           attendance.outdoorDutyDetails = outdoorDutyDetails;
           
           // If there are work hours, add them to total hours
           if (attendance.workHours) {
-            attendance.totalHours = parseFloat((attendance.workHours + parseFloat(odHours)).toFixed(2));
+            attendance.totalHours = parseFloat((attendance.workHours + parsedOdHours).toFixed(2));
           } else {
-            attendance.totalHours = parseFloat(odHours);
+            attendance.totalHours = parsedOdHours;
           }
           
-          // Update status based on total hours if check-in/out exists
-          if (attendance.checkIn && attendance.checkOut) {
-            if (attendance.totalHours >= 8) {
-              attendance.status = 'present';
-            } else if (attendance.totalHours >= 4) {
-              attendance.status = 'half-day';
-            }
+          // Always update status based on total hours, regardless of check-in/out
+          // This handles cases where employee was marked absent but had full day OD
+          if (attendance.totalHours >= 7) {
+            attendance.status = 'present';
+          } else if (attendance.totalHours >= 5) {
+            attendance.status = 'early-leave';
+          } else if (attendance.totalHours >= 4) {
+            attendance.status = 'half-day';
+          } else {
+            attendance.status = 'early-leave';
           }
           
-          attendance.remarks = `Outdoor duty approved by ${req.user.fullName || 'Admin'}`;
+          // Add remark about OD approval
+          attendance.remarks = attendance.remarks 
+            ? `${attendance.remarks}; Outdoor duty approved by ${req.user.fullName || 'Admin'}`
+            : `Outdoor duty approved by ${req.user.fullName || 'Admin'}`;
         }
 
         await attendance.save();

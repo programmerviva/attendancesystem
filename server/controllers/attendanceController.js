@@ -118,81 +118,41 @@ export const createAttendance = async (req, res) => {
         });
       }
 
-      // Check if user has approved outdoor duty that covers office closing time
-      const currentTime = new Date();
-      const settings = await Settings.findOne();
-      const officeHours = settings ? settings.officeHours : { start: '09:00', end: '18:00' };
-      
-      // Parse office end time
-      const [endHour, endMinute] = officeHours.end.split(':').map(Number);
-      const officeEndTime = new Date();
-      officeEndTime.setHours(endHour, endMinute || 0, 0, 0);
-      
-      // Check for approved OD that covers office closing time
-      const approvedOD = await OutdoorDuty.findOne({
-        user: userId,
-        date: {
-          $gte: today,
-          $lt: dayjs(today).add(1, 'day').toDate(),
-        },
-        status: 'approved',
-        endTime: { $gte: officeEndTime }
-      });
-      
-      // If no approved OD covering office closing time, verify location
-      if (!approvedOD) {
-        // Location verification required for check-out
-        if (!latitude || !longitude) {
-          return res.status(400).json({
-            status: 'fail',
-            message: 'Location data is required for check-out',
-          });
-        }
+      // Always verify location for check-out (no bypass for current day OD)
+      if (!latitude || !longitude) {
+        return res.status(400).json({
+          status: 'fail',
+          message: 'Location data is required for check-out',
+        });
+      }
 
-        // Calculate distance from office
-        const distance = calculateDistance(
-          latitude,
-          longitude,
-          officeLocation.latitude,
-          officeLocation.longitude
-        );
+      // Calculate distance from office
+      const distance = calculateDistance(
+        latitude,
+        longitude,
+        officeLocation.latitude,
+        officeLocation.longitude
+      );
 
-        // Check if user is within office radius
-        if (distance > officeLocation.radius) {
-          return res.status(400).json({
-            status: 'fail',
-            message: 'You must be at the office location to check out',
-            distance,
-            maxAllowedDistance: officeLocation.radius,
-          });
-        }
+      // Check if user is within office radius
+      if (distance > officeLocation.radius) {
+        return res.status(400).json({
+          status: 'fail',
+          message: 'You must be at the office location to check out',
+          distance,
+          maxAllowedDistance: officeLocation.radius,
+        });
       }
 
       // Record check-out
       attendance.checkOut = {
-        time: currentTime,
-        latitude: latitude || null,
-        longitude: longitude || null,
-        address: address || (approvedOD ? 'Auto checkout due to approved outdoor duty' : ''),
+        time: new Date(),
+        latitude,
+        longitude,
+        address,
         ipAddress,
         deviceInfo,
       };
-
-      // If there's an approved OD, add its details
-      if (approvedOD) {
-        attendance.outdoorDutyDetails = {
-          startTime: approvedOD.startTime,
-          endTime: approvedOD.endTime,
-          reason: approvedOD.reason,
-          outdoorDutyId: approvedOD._id
-        };
-        
-        // Calculate OD hours
-        const odStartTime = dayjs(approvedOD.startTime);
-        const odEndTime = dayjs(approvedOD.endTime);
-        const odHours = odEndTime.diff(odStartTime, 'hour', true);
-        attendance.outdoorDutyHours = parseFloat(odHours.toFixed(2));
-      }
 
       // Calculate work hours
       attendance.calculateWorkHours();
