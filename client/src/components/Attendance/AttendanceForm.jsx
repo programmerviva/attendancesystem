@@ -156,8 +156,11 @@ function AttendanceForm() {
     const now = dayjs();
 
     try {
+      // Fix: Convert 'checkin' to 'check-in' and 'checkout' to 'check-out' to match backend expectations
+      const serverType = type === 'checkin' ? 'check-in' : 'check-out';
+      
       const requestData = {
-        type,
+        type: serverType,
         time: now.format(),
       };
 
