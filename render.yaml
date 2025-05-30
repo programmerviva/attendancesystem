@@ -1,0 +1,36 @@
+services:
+  # Backend API service
+  - type: web
+    name: attendance-system-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 90d
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_URL
+        fromService:
+          name: attendance-system-client
+          type: web
+          property: url
+
+  # Frontend client service
+  - type: web
+    name: attendance-system-client
+    runtime: static
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: attendance-system-api
+          type: web
+          property: url
