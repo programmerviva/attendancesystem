@@ -38,8 +38,11 @@ const outdoorDutySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Create a compound index on user and date to ensure one outdoor duty request per user per day
-outdoorDutySchema.index({ user: 1, date: 1 }, { unique: true });
+// Create a compound index on user, date, startTime and endTime to allow multiple OD requests per day with different time slots
+outdoorDutySchema.index({ user: 1, date: 1, startTime: 1, endTime: 1 }, { unique: true });
+
+// Remove any existing simple index on user and date
+outdoorDutySchema.index({ user: 1, date: 1 }, { unique: false });
 
 const OutdoorDuty = mongoose.model('OutdoorDuty', outdoorDutySchema);
 export default OutdoorDuty;

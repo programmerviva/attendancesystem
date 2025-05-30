@@ -81,8 +81,15 @@ attendanceSchema.methods.calculateWorkHours = function () {
   this.totalHours = parseFloat((this.workHours + (this.outdoorDutyHours || 0)).toFixed(2));
   
   // Determine status based on total hours
-  if (this.totalHours >= 8) {
+  // Updated status rules:
+  // 7-8+ hours = present
+  // 5-7 hours = early-leave
+  // 4-5 hours = half-day
+  // <4 hours = early-leave
+  if (this.totalHours >= 7) {
     this.status = 'present';
+  } else if (this.totalHours >= 5) {
+    this.status = 'early-leave';
   } else if (this.totalHours >= 4) {
     this.status = 'half-day';
   } else {
