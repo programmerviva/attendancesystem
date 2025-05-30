@@ -9,7 +9,7 @@ function EmployeeHolidayCalendar() {
   const [currentYear, setCurrentYear] = useState(dayjs().year());
 
   const token = localStorage.getItem('token');
-  const apiUrl = 'http://localhost:5000';
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchHolidays = async () => {
