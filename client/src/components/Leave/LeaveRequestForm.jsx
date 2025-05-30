@@ -55,7 +55,7 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
 
   const fetchLeaveBalance = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/v1/leaves/balance', {
+      const response = await axios.get(`${apiUrl}/api/v1/leaves/balance`, {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           startDate: financialYear.start,
@@ -138,7 +138,7 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
       }
 
       // Send the request to the server
-      const response = await axios.post('http://localhost:5000/api/v1/leaves', payload, {
+      const response = await axios.post(`${apiUrl}/api/v1/leaves`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
