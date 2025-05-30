@@ -14,11 +14,16 @@ export const createOutdoorDutyRequest = async (req, res, next) => {
       return next(new AppError('Date is required', 400));
     }
 
-    // Validate date is not in the future
-    const requestDate = dayjs(date);
+    // Format date to YYYY-MM-DD
+    const formattedDate = dayjs(date).format('YYYY-MM-DD');
+    const requestDate = dayjs(formattedDate);
     const today = dayjs().startOf('day');
+
+    // Allow only current or past date, not future
     if (requestDate.isAfter(today)) {
-      return next(new AppError('Outdoor duty date must be today or in the past', 400));
+      return next(
+        new AppError('Outdoor duty can only be requested for current or past dates', 400)
+      );
     }
 
     // Validate start and end times
@@ -35,17 +40,6 @@ export const createOutdoorDutyRequest = async (req, res, next) => {
       return next(new AppError('Reason is required', 400));
     }
 
-    // Format date to YYYY-MM-DD
-    const formattedDate = dayjs(date).format('YYYY-MM-DD');
-    
-    // Check if date is current or in the past (only allow current and past dates for OD requests)
-    const requestDate = dayjs(formattedDate);
-    const tomorrow = dayjs().startOf('day').add(1, 'day');
-    
-    if (requestDate.isAfter(tomorrow)) {
-      return next(new AppError('Outdoor duty can only be requested for current or past dates', 400));
-    }
-
     // Check if request already exists for this date with overlapping time
     const existingRequests = await OutdoorDuty.find({
       user: userId,
@@ -56,21 +50,26 @@ export const createOutdoorDutyRequest = async (req, res, next) => {
       // Check for time overlap with existing requests
       const newStartTime = dayjs(startTime);
       const newEndTime = dayjs(endTime);
-      
-      const hasOverlap = existingRequests.some(request => {
+
+      const hasOverlap = existingRequests.some((request) => {
         const existingStartTime = dayjs(request.startTime);
         const existingEndTime = dayjs(request.endTime);
-        
+
         // Check if new time range overlaps with existing time range
         return (
           (newStartTime.isBefore(existingEndTime) && newEndTime.isAfter(existingStartTime)) ||
-          newStartTime.isSame(existingStartTime) || 
+          newStartTime.isSame(existingStartTime) ||
           newEndTime.isSame(existingEndTime)
         );
       });
-      
+
       if (hasOverlap) {
-        return next(new AppError('Outdoor duty request with overlapping time already exists for this date', 400));
+        return next(
+          new AppError(
+            'Outdoor duty request with overlapping time already exists for this date',
+            400
+          )
+        );
       }
     }
 
@@ -164,12 +163,12 @@ export const getAllOutdoorDutyRequests = async (req, res, next) => {
           select: 'fullName email department designation',
         })
         .sort({ date: -1 });
-      
+
       // Ensure user data is properly formatted
-      outdoorDutyRequests = outdoorDutyRequests.map(duty => {
+      outdoorDutyRequests = outdoorDutyRequests.map((duty) => {
         // Create a safe copy of the document
         const safeDuty = duty.toObject();
-        
+
         // Ensure user object is properly formatted
         if (safeDuty.user && typeof safeDuty.user === 'object') {
           // Keep it as is
@@ -177,7 +176,7 @@ export const getAllOutdoorDutyRequests = async (req, res, next) => {
           // If user is not properly populated, set to a safe default
           safeDuty.user = { fullName: 'Unknown', email: '', department: '', designation: '' };
         }
-        
+
         return safeDuty;
       });
     } catch (findError) {
@@ -232,7 +231,7 @@ export const updateOutdoorDutyRequestStatus = async (req, res, next) => {
     outdoorDutyRequest.status = status;
     outdoorDutyRequest.approvedBy = req.user._id;
     outdoorDutyRequest.approvedAt = Date.now();
-    
+
     if (remarks) {
       outdoorDutyRequest.remarks = remarks;
     }
@@ -253,13 +252,13 @@ export const updateOutdoorDutyRequestStatus = async (req, res, next) => {
         const odEndTime = dayjs(outdoorDutyRequest.endTime);
         const odHours = odEndTime.diff(odStartTime, 'hour', true).toFixed(2);
         const parsedOdHours = parseFloat(odHours);
-        
+
         // Create outdoor duty details
         const outdoorDutyDetails = {
           startTime: outdoorDutyRequest.startTime,
           endTime: outdoorDutyRequest.endTime,
           reason: outdoorDutyRequest.reason || '',
-          outdoorDutyId: outdoorDutyRequest._id
+          outdoorDutyId: outdoorDutyRequest._id,
         };
 
         if (!attendance) {
@@ -267,19 +266,12 @@ export const updateOutdoorDutyRequestStatus = async (req, res, next) => {
           attendance = new Attendance({
             user: outdoorDutyRequest.user,
             date: outdoorDutyRequest.date,
-<<<<<<< HEAD
-            status: parseFloat(odHours) >= 7 ? 'present' : parseFloat(odHours) >= 4 ? 'half-day' : 'outdoor-duty',
-            isOutdoorDuty: true,
-            outdoorDutyHours: parseFloat(odHours),
-            totalHours: parseFloat(odHours),
-=======
             outdoorDutyHours: parsedOdHours,
             totalHours: parsedOdHours,
->>>>>>> 78d80a15e8d5c4a5875d187f0c5b2b0c129a09a8
             outdoorDutyDetails: outdoorDutyDetails,
             remarks: `Outdoor duty approved by ${req.user.fullName || 'Admin'}`,
           });
-          
+
           // Set status based on OD hours
           if (parsedOdHours >= 7) {
             attendance.status = 'present';
@@ -292,34 +284,16 @@ export const updateOutdoorDutyRequestStatus = async (req, res, next) => {
           }
         } else {
           // Update existing attendance record
-<<<<<<< HEAD
-          attendance.isOutdoorDuty = true;
-          attendance.outdoorDutyHours = parseFloat(odHours);
-          attendance.outdoorDutyDetails = outdoorDutyDetails;
-          
-          // Calculate total hours (work hours + OD hours)
-          const workHours = attendance.workHours || 0;
-          const totalHours = parseFloat((workHours + parseFloat(odHours)).toFixed(2));
-          attendance.totalHours = totalHours;
-          
-          // Update status based on total hours
-          if (totalHours >= 7) {
-            attendance.status = 'present';
-          } else if (totalHours >= 4) {
-            attendance.status = 'half-day';
-          } else {
-            attendance.status = 'outdoor-duty';
-=======
           attendance.outdoorDutyHours = parsedOdHours;
           attendance.outdoorDutyDetails = outdoorDutyDetails;
-          
+
           // If there are work hours, add them to total hours
           if (attendance.workHours) {
             attendance.totalHours = parseFloat((attendance.workHours + parsedOdHours).toFixed(2));
           } else {
             attendance.totalHours = parsedOdHours;
           }
-          
+
           // Always update status based on total hours, regardless of check-in/out
           // This handles cases where employee was marked absent but had full day OD
           if (attendance.totalHours >= 7) {
@@ -330,11 +304,10 @@ export const updateOutdoorDutyRequestStatus = async (req, res, next) => {
             attendance.status = 'half-day';
           } else {
             attendance.status = 'early-leave';
->>>>>>> 78d80a15e8d5c4a5875d187f0c5b2b0c129a09a8
           }
-          
+
           // Add remark about OD approval
-          attendance.remarks = attendance.remarks 
+          attendance.remarks = attendance.remarks
             ? `${attendance.remarks}; Outdoor duty approved by ${req.user.fullName || 'Admin'}`
             : `Outdoor duty approved by ${req.user.fullName || 'Admin'}`;
         }
@@ -357,7 +330,7 @@ export const updateOutdoorDutyRequestStatus = async (req, res, next) => {
       approvedBy: outdoorDutyRequest.approvedBy,
       approvedAt: outdoorDutyRequest.approvedAt,
       createdAt: outdoorDutyRequest.createdAt,
-      updatedAt: outdoorDutyRequest.updatedAt
+      updatedAt: outdoorDutyRequest.updatedAt,
     };
 
     res.status(200).json({
