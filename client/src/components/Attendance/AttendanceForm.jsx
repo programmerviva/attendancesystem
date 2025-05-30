@@ -164,8 +164,8 @@ function AttendanceForm() {
         time: now.format(),
       };
 
-      // Only include location data if not on outdoor duty
-      if (!hasApprovedOutdoorDuty && location) {
+      // Always include location data regardless of outdoor duty status
+      if (location) {
         requestData.latitude = location.latitude;
         requestData.longitude = location.longitude;
         requestData.address = address || '';
