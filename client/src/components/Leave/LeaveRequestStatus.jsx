@@ -22,7 +22,8 @@ function LeaveRequestStatus({ refreshTrigger }) {
   const fetchLeaveRequests = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/v1/leaves', {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await axios.get(`${apiUrl}/api/v1/leaves`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
