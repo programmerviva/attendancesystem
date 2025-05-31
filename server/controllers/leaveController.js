@@ -132,7 +132,6 @@ export const getLeaveBalance = async (req, res, next) => {
       },
     });
   } catch (err) {
-    console.error('Error in getLeaveBalance:', err);
     next(err);
   }
 };
