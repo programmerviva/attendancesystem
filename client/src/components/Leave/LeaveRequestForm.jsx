@@ -162,6 +162,7 @@ function LeaveRequestForm({ onLeaveSubmitted }) {
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to submit leave request');
+    } finally {
       setLoading(false);
     }
   };
