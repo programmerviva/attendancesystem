@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Leave from '../models/Leave.js';
 import User from '../models/User.js';
 import AppError from '../utils/appError.js';
@@ -88,7 +89,7 @@ export const getLeaveBalance = async (req, res, next) => {
 
     // Get system settings for leave balances
     const settings = await mongoose.model('Settings').findOne();
-    
+
     // Calculate financial year if not provided
     let financialYearStart, financialYearEnd;
     if (!startDate || !endDate) {
@@ -131,6 +132,7 @@ export const getLeaveBalance = async (req, res, next) => {
       },
     });
   } catch (err) {
+    console.error('Error in getLeaveBalance:', err);
     next(err);
   }
 };
