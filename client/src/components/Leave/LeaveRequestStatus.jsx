@@ -4,44 +4,33 @@ import dayjs from 'dayjs';
 
 function LeaveRequestStatus({ refreshTrigger }) {
   const [leaveRequests, setLeaveRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const token = localStorage.getItem('token');
-
-  useEffect(() => {
-    fetchLeaveRequests();
-
-    // Set up polling to check for updates every 10 seconds
-    const intervalId = setInterval(fetchLeaveRequests, 10000);
-
-    // Clean up interval on component unmount
-    return () => clearInterval(intervalId);
-  }, [refreshTrigger]);
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   const fetchLeaveRequests = async () => {
-    setLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL;
       const response = await axios.get(`${apiUrl}/api/v1/leaves`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
       setLeaveRequests(response.data.data.leaves || []);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch leave requests');
       console.error('Error fetching leave requests:', err);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const formatDate = (dateString) => {
-    return dayjs(dateString).format('MMM DD, YYYY');
-  };
+  useEffect(() => {
+    fetchLeaveRequests();
+    const intervalId = setInterval(fetchLeaveRequests, 10000);
+    return () => clearInterval(intervalId);
+  }, [refreshTrigger, apiUrl]);
+
+  const formatDate = (dateString) => dayjs(dateString).format('MMM DD, YYYY');
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -90,11 +79,7 @@ function LeaveRequestStatus({ refreshTrigger }) {
         </div>
       )}
 
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      ) : leaveRequests.length === 0 ? (
+      {leaveRequests.length === 0 ? (
         <div className="text-center py-8">
           <svg
             className="mx-auto h-12 w-12 text-gray-400"
@@ -119,40 +104,22 @@ function LeaveRequestStatus({ refreshTrigger }) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Type
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Dates
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Days
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Reason
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Applied On
                 </th>
               </tr>
